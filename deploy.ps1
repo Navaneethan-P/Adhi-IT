@@ -1,5 +1,5 @@
 # CampusOS Quick Deploy Script
-# Run: .\deploy.ps1 "your change message"
+# Usage: .\deploy.ps1 "your change message"
 
 param(
     [string]$message = "Update: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
@@ -12,5 +12,7 @@ git add .
 git commit -m $message
 git push
 
-Write-Host "`n✅ Pushed to GitHub! Render will auto-deploy in ~2 minutes." -ForegroundColor Green
-Write-Host "🌐 Check status at: https://dashboard.render.com" -ForegroundColor Cyan
+Write-Host "`n✅ Pushed to GitHub! Render will auto-deploy in ~2-3 minutes." -ForegroundColor Green
+Write-Host "🌐 Live app:     https://campusos.onrender.com" -ForegroundColor Cyan
+Write-Host "📊 Dashboard:    https://dashboard.render.com" -ForegroundColor Cyan
+Write-Host "📋 Deploy logs:  https://dashboard.render.com → campusos → Logs`n" -ForegroundColor Cyan

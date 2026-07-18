@@ -2,11 +2,19 @@ services:
   - type: web
     name: campusos
     env: node
+    region: singapore
     rootDir: backend
-    buildCommand: cd .. && node -e "const {execSync}=require('child_process'); execSync('npm install', {cwd:'app',stdio:'inherit'}); execSync('npm run build', {cwd:'app',stdio:'inherit'}); execSync('npm install', {cwd:'backend',stdio:'inherit'});"
+    buildCommand: |
+      cd .. && npm install --prefix app && npm run build --prefix app && npm install --prefix backend --omit=dev
     startCommand: node index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3001
+      - key: JWT_SECRET
+        generateValue: true
+    disk:
+      name: campusos-data
+      mountPath: /data
+      sizeGB: 1

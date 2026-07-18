@@ -1,14 +1,13 @@
 {
-  "name": "CampusOS",
-  "short_name": "CampusOS",
-  "description": "Adhi College of Engineering and Technology - Campus Management System",
+  "name": "ADHI-IT",
+  "short_name": "ADHI-IT",
+  "description": "Adhi College of Engineering and Technology - IT Department",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d0d1a",
-  "theme_color": "#6C63FF",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
   "orientation": "portrait",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/logo.png", "sizes": "any", "type": "image/png" }
   ]
 }

@@ -1,13 +1,12 @@
-const { DatabaseSync } = require('node:sqlite');
-const path = require('path');
+const { createClient } = require('@libsql/client');
 const crypto = require('crypto');
+require('dotenv').config();
 
-// In production (Fly.io), use the persistent /data volume.
-// In development, keep the DB next to the source files.
-const DB_PATH = process.env.NODE_ENV === 'production'
-  ? '/data/campusos.db'
-  : path.join(__dirname, 'campusos.db');
-const db = new DatabaseSync(DB_PATH);
+// Connect to Turso Cloud Database (or local for fallback if specified)
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL || 'file:./campusos.db',
+  authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+});
 
 function uuidv4() {
   return crypto.randomUUID();
@@ -26,12 +25,10 @@ function verifyPassword(password, storedHash) {
   return hash === originalHash;
 }
 
-db.exec('PRAGMA journal_mode = WAL');
-db.exec('PRAGMA foreign_keys = ON');
-
-function initDB() {
-  db.exec(`
-    -- Users: rollNo is the login identifier
+async function initDB() {
+  console.log('Initializing ADHI-IT Database schema...');
+  // Users
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -42,10 +39,12 @@ function initDB() {
       department TEXT DEFAULT 'IT',
       inchargeYear INTEGER,
       isActive INTEGER DEFAULT 1,
-      createdAt TEXT DEFAULT (datetime('now'))
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
     );
+  `);
 
-    -- Subjects
+  // Subjects
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS subjects (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -55,27 +54,33 @@ function initDB() {
       credits INTEGER DEFAULT 3,
       hoursPerWeek INTEGER DEFAULT 4,
       isActive INTEGER DEFAULT 1,
-      createdAt TEXT DEFAULT (datetime('now'))
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
     );
+  `);
 
-    -- Staff–Subject assignments (many-to-many: same staff can handle multiple years)
+  // Staff-Subject assignments
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS subject_staff (
       id TEXT PRIMARY KEY,
       subjectId TEXT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
       staffId TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       UNIQUE(subjectId, staffId)
     );
+  `);
 
-    -- Timetable per year (JSON config includes periods + break slots)
+  // Timetable
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS timetable (
       id TEXT PRIMARY KEY,
       year INTEGER NOT NULL UNIQUE,
       config TEXT NOT NULL DEFAULT '{}',
       publishedBy TEXT REFERENCES users(id),
-      publishedAt TEXT DEFAULT (datetime('now'))
+      publishedAt TEXT DEFAULT CURRENT_TIMESTAMP
     );
+  `);
 
-    -- Exams
+  // Exams
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS exams (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -85,20 +90,24 @@ function initDB() {
       examDate TEXT,
       maxMarks REAL DEFAULT 50,
       isPublished INTEGER DEFAULT 0,
-      createdAt TEXT DEFAULT (datetime('now'))
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
     );
+  `);
 
-    -- Marks per student per exam
+  // Marks
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS marks (
       id TEXT PRIMARY KEY,
       examId TEXT NOT NULL REFERENCES exams(id),
       studentId TEXT NOT NULL REFERENCES users(id),
       marks REAL,
-      enteredAt TEXT DEFAULT (datetime('now')),
+      enteredAt TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(examId, studentId)
     );
+  `);
 
-    -- Attendance per period per subject per date
+  // Attendance
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS attendance (
       id TEXT PRIMARY KEY,
       subjectId TEXT NOT NULL REFERENCES subjects(id),
@@ -108,11 +117,13 @@ function initDB() {
       period INTEGER NOT NULL,
       presentIds TEXT DEFAULT '[]',
       absentIds TEXT DEFAULT '[]',
-      createdAt TEXT DEFAULT (datetime('now')),
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(subjectId, date, period)
     );
+  `);
 
-    -- Fee payments per student per semester
+  // Fee payments
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS fee_payments (
       id TEXT PRIMARY KEY,
       studentId TEXT NOT NULL REFERENCES users(id),
@@ -121,11 +132,13 @@ function initDB() {
       paidAmount REAL DEFAULT 0,
       dueDate TEXT,
       notes TEXT,
-      updatedAt TEXT DEFAULT (datetime('now')),
+      updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(studentId, semester)
     );
+  `);
 
-    -- Announcements stored as history
+  // Notifications
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS notifications (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -133,88 +146,74 @@ function initDB() {
       targetRole TEXT,
       targetYear INTEGER,
       sentByUserId TEXT REFERENCES users(id),
-      createdAt TEXT DEFAULT (datetime('now'))
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
     );
+  `);
 
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS notification_reads (
       notificationId TEXT NOT NULL REFERENCES notifications(id),
       userId TEXT NOT NULL REFERENCES users(id),
-      readAt TEXT DEFAULT (datetime('now')),
+      readAt TEXT DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY(notificationId, userId)
     );
+  `);
 
-    -- Coding scores
+  // Coding scores
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS coding_scores (
       id TEXT PRIMARY KEY,
       studentId TEXT NOT NULL REFERENCES users(id) UNIQUE,
       leetcode INTEGER DEFAULT 0,
       hackerrank INTEGER DEFAULT 0,
       contestRating INTEGER DEFAULT 0,
-      updatedAt TEXT DEFAULT (datetime('now'))
+      updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
     );
+  `);
 
-    -- Global settings (timetable_config, etc.)
+  // Global settings
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
   `);
 
-  seedDatabase();
+  await seedDatabase();
 }
 
-function seedDatabase() {
-  const existingAdmin = db.prepare("SELECT id FROM users WHERE role='ADMIN' LIMIT 1").get();
-  if (existingAdmin) return;
+async function seedDatabase() {
+  const adminCheck = await db.execute("SELECT id FROM users WHERE role='ADMIN' LIMIT 1");
+  if (adminCheck.rows.length > 0) return;
 
-  console.log('Seeding clean Adhi-IT database...');
+  console.log('Seeding initial ADHI-IT Admin account...');
 
-  const insertUser = db.prepare(
-    `INSERT INTO users (id, name, rollNo, password, role, year, department, inchargeYear) VALUES (?,?,?,?,?,?,?,?)`
-  );
-
-  // Admin: rollNo = ADMIN001, password = 2005
   const adminId = uuidv4();
-  insertUser.run(adminId, 'Super Admin', 'ADMIN001', hashPassword('2005'), 'ADMIN', null, 'IT', null);
+  await db.execute({
+    sql: 'INSERT INTO users (id, name, rollNo, password, role, department) VALUES (?, ?, ?, ?, ?, ?)',
+    args: [adminId, 'Super Admin', 'ADMIN001', hashPassword('2005'), 'ADMIN', 'IT']
+  });
 
-  // Demo student: rollNo = 410123205040, password = last 4 digits = 5040
-  const demoStudentId = uuidv4();
-  insertUser.run(demoStudentId, 'Demo Student', '410123205040', hashPassword('5040'), 'STUDENT', 4, 'IT', null);
-
-  // Default timetable config (8 periods, breaks defined by admin)
   const defaultTTConfig = {
     periods: 8,
-    breakAfter: [2, 5, 6], // Break between period 2-3, 5-6 (lunch), 6-7
+    breakAfter: [2, 5, 6],
     periodTimes: [
-      '08:00 - 08:50',
-      '08:50 - 09:40',
-      '09:40 - 09:50', // Break 1
-      '09:50 - 10:40',
-      '10:40 - 11:30',
-      '11:30 - 12:20',
-      '12:20 - 01:00', // Lunch
-      '01:00 - 01:50',
-      '01:50 - 02:40',
-      '02:40 - 02:50', // Break 2
-      '02:50 - 03:40',
-      '03:40 - 04:30'
+      '08:00 - 08:50', '08:50 - 09:40', '09:40 - 09:50', '09:50 - 10:40',
+      '10:40 - 11:30', '11:30 - 12:20', '12:20 - 01:00', '01:00 - 01:50',
+      '01:50 - 02:40', '02:40 - 02:50', '02:50 - 03:40', '03:40 - 04:30'
     ]
   };
-  db.prepare(`INSERT INTO settings (key, value) VALUES (?,?) ON CONFLICT(key) DO NOTHING`)
-    .run('timetable_config', JSON.stringify(defaultTTConfig));
-
-  // Welcome notification
-  db.prepare(`INSERT INTO notifications (id,title,body,targetRole,sentByUserId,createdAt) VALUES (?,?,?,?,?,?)`)
-    .run(uuidv4(), 'Welcome to Adhi-IT', 'System initialized. Contact Admin to get started.', 'STUDENT', adminId, new Date().toISOString());
+  await db.execute({
+    sql: 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING',
+    args: ['timetable_config', JSON.stringify(defaultTTConfig)]
+  });
 
   console.log('');
   console.log('  ╔════════════════════════════════════════════╗');
-  console.log('  ║  Adhi-IT — Clean Database Ready           ║');
+  console.log('  ║  ADHI-IT — Database Ready                  ║');
   console.log('  ║                                            ║');
-  console.log('  ║  Admin  Roll: ADMIN001   Pass: 2005       ║');
-  console.log('  ║  Student Roll: 410123205040  Pass: 5040   ║');
+  console.log('  ║  Admin  Roll: ADMIN001   Pass: 2005        ║');
   console.log('  ║                                            ║');
-  console.log('  ║  Admin Dashboard: http://localhost:3001/admin ║');
   console.log('  ╚════════════════════════════════════════════╝');
   console.log('');
 }

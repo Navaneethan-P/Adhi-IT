@@ -64,7 +64,7 @@ router.post('/:year', requireAuth, requireInchargeOrHOD, async (req, res) => {
 
     await db.execute({
       sql: 'INSERT INTO notifications (id,title,body,targetRole,targetYear,sentByUserId,createdAt) VALUES (?,?,?,?,?,?,?)',
-      args: [uuidv4(), ' Timetable Updated', `Year ${year} timetable has been published. Check your Timetable section.`, 'STUDENT', year, req.user.userId, new Date().toISOString()]
+      args: [uuidv4(), 'Timetable Updated', `Year ${year} timetable has been published. Check your Timetable section.`, 'STUDENT', year, req.user.userId, new Date().toISOString()]
     });
 
     const io = req.app.get('io');

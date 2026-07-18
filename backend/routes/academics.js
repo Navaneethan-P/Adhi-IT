@@ -98,12 +98,12 @@ router.post('/exams/:id/publish', requireAuth, requireHOD, async (req, res) => {
     await db.execute({ sql: 'UPDATE exams SET isPublished=1, publishedBy=?, publishedAt=? WHERE id=?', args: [req.user.userId, new Date().toISOString(), req.params.id] });
 
     const notifId = uuidv4();
-    await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetRole,targetYear,sentByUserId,createdAt) VALUES (?,?,?,?,?,?,?)', args: [notifId, ` ${exam.type} Exam Scheduled`, `${exam.title} — ${exam.examDate || 'Date TBA'} ${exam.examTime ? '(' + exam.examTime + ')' : ''}. Max Marks: ${exam.maxMarks}`, 'STUDENT', exam.year, req.user.userId, new Date().toISOString()] });
+    await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetRole,targetYear,sentByUserId,createdAt) VALUES (?,?,?,?,?,?,?)', args: [notifId, `${exam.type} Exam Scheduled`, `${exam.title} - ${exam.examDate || 'Date TBA'} ${exam.examTime ? '(' + exam.examTime + ')' : ''}. Max Marks: ${exam.maxMarks}`, 'STUDENT', exam.year, req.user.userId, new Date().toISOString()] });
 
     const subjectRes = await db.execute({ sql: 'SELECT staffId FROM subjects WHERE id=?', args: [exam.subjectId] });
     const subject = subjectRes.rows[0];
     if (subject && subject.staffId) {
-      await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetUserId,sentByUserId,createdAt) VALUES (?,?,?,?,?,?)', args: [uuidv4(), ` Please Enter Marks: ${exam.title}`, `${exam.type} exam published for Year ${exam.year}. Open the Mark Entry section to fill student marks.`, subject.staffId, req.user.userId, new Date().toISOString()] });
+      await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetUserId,sentByUserId,createdAt) VALUES (?,?,?,?,?,?)', args: [uuidv4(), `Please Enter Marks: ${exam.title}`, `${exam.type} exam published for Year ${exam.year}. Open the Mark Entry section to fill student marks.`, subject.staffId, req.user.userId, new Date().toISOString()] });
     }
 
     const io = req.app.get('io');
@@ -147,7 +147,7 @@ router.post('/marks', requireAuth, requireStaffOrHOD, async (req, res) => {
     const examRes = await db.execute({ sql: 'SELECT e.*, s.year, s.name as subjectName FROM exams e JOIN subjects s ON e.subjectId=s.id WHERE e.id=?', args: [examId] });
     const exam = examRes.rows[0];
     if (exam) {
-      await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetRole,targetYear,sentByUserId,createdAt) VALUES (?,?,?,?,?,?,?)', args: [uuidv4(), ` Marks Published: ${exam.subjectName} ${exam.type}`, `Your ${exam.type} marks for ${exam.subjectName} have been published. Check your Marks section.`, 'STUDENT', exam.year, req.user.userId, new Date().toISOString()] });
+      await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetRole,targetYear,sentByUserId,createdAt) VALUES (?,?,?,?,?,?,?)', args: [uuidv4(), `Marks Published: ${exam.subjectName} ${exam.type}`, `Your ${exam.type} marks for ${exam.subjectName} have been published. Check your Marks section.`, 'STUDENT', exam.year, req.user.userId, new Date().toISOString()] });
       const io = req.app.get('io');
       if (io) io.to(`year:${exam.year}`).emit('notification', { title: 'Marks Published' });
     }

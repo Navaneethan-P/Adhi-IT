@@ -13,7 +13,7 @@ timeout /t 3 /nobreak > nul
 
 echo.
 echo Opening Admin Dashboard in your browser...
-start http://localhost:3001/admin
+start "" "file:///%~dp0backend\public\admin\index.html"
 
 echo.
 echo The server is running in the background. Keep this window open!

@@ -1,0 +1,19 @@
+node_modules/
+app/node_modules/
+backend/node_modules/
+
+# SQLite WAL files (not needed in git)
+*.db-shm
+*.db-wal
+
+# Environment secrets
+.env
+.env.local
+.env.production
+
+# Built frontend (Dockerfile builds this fresh)
+app/dist/
+
+# OS files
+.DS_Store
+Thumbs.db

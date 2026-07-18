@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: campusos
+    env: node
+    rootDir: backend
+    buildCommand: cd .. && node -e "const {execSync}=require('child_process'); execSync('npm install', {cwd:'app',stdio:'inherit'}); execSync('npm run build', {cwd:'app',stdio:'inherit'}); execSync('npm install', {cwd:'backend',stdio:'inherit'});"
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001

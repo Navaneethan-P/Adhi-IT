@@ -19,7 +19,7 @@ timeout /t 1 /nobreak >nul
 
 :: Start backend server in a separate window (stays open, shows logs)
 echo  Starting backend server...
-start "CampusOS Backend (Keep Open)" cmd /k "cd /d "%~dp0backend" && node index.js"
+start "CampusOS Backend (Keep Open)" cmd /k "npm start"
 
 :: Wait for server to be ready
 echo  Waiting for server...

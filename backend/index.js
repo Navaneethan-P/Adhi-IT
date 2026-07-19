@@ -59,12 +59,11 @@ async function startServer() {
   server.listen(PORT, '0.0.0.0', () => {
     console.log('');
     console.log('  ╔══════════════════════════════════════════════════════════╗');
-    console.log('  ║   Adhi-IT — Campus OS Backend                           ║');
-    console.log(`  ║   API running at http://localhost:${PORT}                    ║`);
+    console.log('  ║   CampusOS Backend (Database API)                        ║');
+    console.log(`  ║   Status: ONLINE (Port ${PORT})                               ║`);
     console.log('  ║                                                          ║');
-    console.log('  ║   Admin Dashboard: open the file below in browser       ║');
-    console.log('  ║   backend/public/admin/index.html                       ║');
-    console.log('  ║   Admin Roll: ADMIN001  Password: 2005                  ║');
+    console.log('  ║   Admin Dashboard: open the file below in browser        ║');
+    console.log('  ║   backend/public/admin/index.html                        ║');
     console.log('  ╚══════════════════════════════════════════════════════════╝');
     console.log('');
   });

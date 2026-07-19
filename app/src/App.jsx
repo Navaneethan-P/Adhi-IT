@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import StudentApp from './pages/student/StudentApp';
 import StaffApp from './pages/staff/StaffApp';
 import HodApp from './pages/hod/HodApp';
+import AdminApp from './pages/admin/AdminApp';
 import './index.css';
 
 const AuthCtx = createContext(null);
@@ -46,11 +47,11 @@ function App() {
   const renderApp = () => {
     if (!user) return <Navigate to="/login" />;
     switch (user.role) {
-      case 'HOD':
-      case 'ADMIN': return <HodApp />;  // Admin uses HOD-level app view
-      case 'STAFF': return <StaffApp />;
+      case 'ADMIN':   return <AdminApp />;
+      case 'HOD':     return <HodApp />;
+      case 'STAFF':   return <StaffApp />;
       case 'STUDENT': return <StudentApp />;
-      default: return <Navigate to="/login" />;
+      default:        return <Navigate to="/login" />;
     }
   };
 

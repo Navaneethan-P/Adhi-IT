@@ -74,11 +74,11 @@ router.get('/subjects', async (req, res) => {
     let result;
     if (year) {
       result = await db.execute({
-        sql: 'SELECT s.*, GROUP_CONCAT(u.name, ", ") as staffNames FROM subjects s LEFT JOIN subject_staff ss ON s.id=ss.subjectId LEFT JOIN users u ON ss.staffId=u.id WHERE s.year=? AND s.isActive=1 GROUP BY s.id ORDER BY s.year, s.name',
+        sql: 'SELECT s.*, GROUP_CONCAT(u.name, \', \') as staffNames FROM subjects s LEFT JOIN subject_staff ss ON s.id=ss.subjectId LEFT JOIN users u ON ss.staffId=u.id WHERE s.year=? AND s.isActive=1 GROUP BY s.id ORDER BY s.year, s.name',
         args: [parseInt(year)]
       });
     } else {
-      result = await db.execute('SELECT s.*, GROUP_CONCAT(u.name, ", ") as staffNames FROM subjects s LEFT JOIN subject_staff ss ON s.id=ss.subjectId LEFT JOIN users u ON ss.staffId=u.id WHERE s.isActive=1 GROUP BY s.id ORDER BY s.year, s.name');
+      result = await db.execute('SELECT s.*, GROUP_CONCAT(u.name, \', \') as staffNames FROM subjects s LEFT JOIN subject_staff ss ON s.id=ss.subjectId LEFT JOIN users u ON ss.staffId=u.id WHERE s.isActive=1 GROUP BY s.id ORDER BY s.year, s.name');
     }
     res.json({ subjects: result.rows });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -399,4 +399,52 @@ router.get('/stats', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// DB mode indicator
+router.get('/db-mode', (req, res) => {
+  const tursoUrl = process.env.TURSO_DATABASE_URL;
+  if (tursoUrl && !tursoUrl.startsWith('file:')) {
+    res.json({ mode: 'turso', url: tursoUrl });
+  } else {
+    res.json({ mode: 'local', url: 'file:./campusos.db' });
+  }
+});
+
+// Deploy trigger — git push + optional Render deploy hook
+router.post('/deploy', (req, res) => {
+  const { exec } = require('child_process');
+  const https = require('https');
+  const { message = `Admin publish ${new Date().toISOString().slice(0, 16)}`, renderHookUrl } = req.body;
+  const cwd = require('path').join(__dirname, '../../');
+
+  exec(`git add . && git commit -m "${message}" && git push`, { cwd, timeout: 60000 }, (err, stdout, stderr) => {
+    const nothingNew = (stderr && stderr.includes('nothing to commit')) || (stdout && stdout.includes('nothing to commit'));
+    if (err && !nothingNew) {
+      return res.status(500).json({ error: err.message, detail: stderr || stdout });
+    }
+    const gitMsg = nothingNew
+      ? 'No code changes to commit. Already up to date on GitHub.'
+      : 'Code pushed to GitHub successfully.';
+
+    if (!renderHookUrl) {
+      return res.json({ success: true, gitMsg, renderMsg: 'No Render hook configured. Set it in Settings.' });
+    }
+
+    // Call Render deploy hook
+    try {
+      const hookUrl = new URL(renderHookUrl);
+      const opts = { hostname: hookUrl.hostname, path: hookUrl.pathname + hookUrl.search, method: 'POST' };
+      const req2 = https.request(opts, (resp) => {
+        res.json({ success: true, gitMsg, renderMsg: `Render deploy triggered (HTTP ${resp.statusCode}). Live in ~2-3 min.` });
+      });
+      req2.on('error', (e) => {
+        res.json({ success: true, gitMsg, renderMsg: `Render hook error: ${e.message}` });
+      });
+      req2.end();
+    } catch (e) {
+      res.json({ success: true, gitMsg, renderMsg: `Invalid Render hook URL: ${e.message}` });
+    }
+  });
+});
+
 module.exports = router;
+

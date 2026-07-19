@@ -12,7 +12,7 @@ git add .
 git commit -m $message
 git push
 
-Write-Host "`n✅ Pushed to GitHub! Render will auto-deploy in ~2-3 minutes." -ForegroundColor Green
-Write-Host "🌐 Live app:     https://campusos.onrender.com" -ForegroundColor Cyan
-Write-Host "📊 Dashboard:    https://dashboard.render.com" -ForegroundColor Cyan
-Write-Host "📋 Deploy logs:  https://dashboard.render.com → campusos → Logs`n" -ForegroundColor Cyan
+Write-Host "`n  Pushed to GitHub. Render will auto-deploy in ~2-3 minutes." -ForegroundColor Green
+Write-Host "  Live app:     https://adhi-it.onrender.com" -ForegroundColor Cyan
+Write-Host "  Dashboard:    https://dashboard.render.com" -ForegroundColor Cyan
+Write-Host "  Deploy logs:  https://dashboard.render.com -> Adhi-IT -> Logs`n" -ForegroundColor Cyan

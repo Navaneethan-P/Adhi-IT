@@ -1,0 +1,12 @@
+◇ injected env (3) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+Initializing ADHI-IT Database schema...
+
+  ╔══════════════════════════════════════════════════════════╗
+  ║   Adhi-IT — Campus OS Backend                           ║
+  ║   Running at http://localhost:3001                      ║
+  ║                                                          ║
+  ║   Admin Dashboard: http://localhost:3001/admin           ║
+  ║   Admin Roll: ADMIN001  Password: 2005                  ║
+  ║   Demo Student: 410123205040  Password: 5040            ║
+  ╚══════════════════════════════════════════════════════════╝
+

@@ -1,1190 +1,2132 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Adhi-IT Admin Dashboard</title>
-<style>
-  :root {
-    --bg: #0f1117; --bg2: #161b27; --bg3: #1e2535;
-    --border: #2a3045; --accent: #3b82f6; --accent2: #1d4ed8;
-    --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-    --text1: #f1f5f9; --text2: #94a3b8; --text3: #64748b;
-    --radius: 10px; --sidebar: 240px;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text1); min-height:100vh; display:flex; font-size:14px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adhi-IT Admin — CampusOS Control Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f0f7ff;
+      --sidebar-bg: #ffffff;
+      --card: #ffffff;
+      --topbar-bg: #ffffff;
+      --accent: #0ea5e9;
+      --accent-dark: #0284c7;
+      --accent-muted: #e0f2fe;
+      --accent-text: #0369a1;
+      --success: #059669;
+      --success-bg: #ecfdf5;
+      --success-border: #a7f3d0;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --warning: #d97706;
+      --warning-bg: #fffbeb;
+      --warning-border: #fde68a;
+      --border: #dbeafe;
+      --border2: #e2e8f0;
+      --text1: #0f172a;
+      --text2: #1e293b;
+      --text3: #475569;
+      --text4: #94a3b8;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --sidebar-w: 235px;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow: 0 4px 12px rgba(14, 165, 233, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
 
-  /* Sidebar */
-  .sidebar { width:var(--sidebar); background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:100; }
-  .sidebar-logo { padding:20px 16px; border-bottom:1px solid var(--border); }
-  .sidebar-logo h1 { font-size:18px; font-weight:800; color:var(--accent); }
-  .sidebar-logo p { font-size:11px; color:var(--text3); margin-top:2px; }
-  .sidebar-nav { flex:1; padding:8px; overflow-y:auto; }
-  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; color:var(--text2); font-size:13px; font-weight:500; transition:all .15s; border:none; background:none; width:100%; text-align:left; }
-  .nav-item:hover { background:var(--bg3); color:var(--text1); }
-  .nav-item.active { background:var(--accent); color:white; }
-  .nav-item svg { width:16px; height:16px; flex-shrink:0; }
-  .nav-section { font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--text3); padding:12px 12px 4px; text-transform:uppercase; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  /* Main */
-  .main { margin-left:var(--sidebar); flex:1; display:flex; flex-direction:column; min-height:100vh; }
-  .topbar { background:var(--bg2); border-bottom:1px solid var(--border); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
-  .topbar-title { font-size:16px; font-weight:700; }
-  .topbar-sub { font-size:12px; color:var(--text3); margin-top:1px; }
-  .content { padding:24px; flex:1; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text1);
+      min-height: 100vh;
+      display: flex;
+      font-size: 14px;
+    }
 
-  /* Cards */
-  .card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
-  .stat-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:16px; margin-bottom:24px; }
-  .stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
-  .stat-val { font-size:28px; font-weight:800; color:var(--accent); }
-  .stat-label { font-size:12px; color:var(--text2); margin-top:4px; }
+    /* ─── Sidebar ─────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      z-index: 100;
+      box-shadow: 2px 0 8px rgba(14, 165, 233, 0.06);
+    }
 
-  /* Tables */
-  .table-wrap { overflow-x:auto; }
-  table { width:100%; border-collapse:collapse; }
-  th { text-align:left; padding:10px 12px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text3); border-bottom:1px solid var(--border); background:var(--bg3); }
-  td { padding:10px 12px; border-bottom:1px solid var(--border); font-size:13px; color:var(--text2); }
-  tr:last-child td { border-bottom:none; }
-  tr:hover td { background:var(--bg3); color:var(--text1); }
+    .sidebar-logo {
+      padding: 18px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-  /* Badges */
-  .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
-  .badge-blue { background:#1e40af33; color:#60a5fa; }
-  .badge-green { background:#065f4633; color:#34d399; }
-  .badge-red { background:#7f1d1d33; color:#f87171; }
-  .badge-yellow { background:#78350f33; color:#fbbf24; }
-  .badge-gray { background:#1e293b; color:#94a3b8; }
+    .sidebar-logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
 
-  /* Forms */
-  .form-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px; }
-  .form-group { display:flex; flex-direction:column; gap:6px; }
-  label { font-size:12px; font-weight:600; color:var(--text2); }
-  input, select, textarea { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text1); font-size:13px; outline:none; width:100%; transition:border-color .15s; font-family:inherit; }
-  input:focus, select:focus, textarea:focus { border-color:var(--accent); }
-  select option { background:var(--bg3); }
-  textarea { resize:vertical; min-height:80px; }
+    .sidebar-logo-icon svg { width: 20px; height: 20px; color: white; }
 
-  /* Buttons */
-  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all .15s; }
-  .btn-primary { background:var(--accent); color:white; }
-  .btn-primary:hover { background:var(--accent2); }
-  .btn-danger { background:#7f1d1d; color:#f87171; }
-  .btn-danger:hover { background:#991b1b; }
-  .btn-success { background:#065f46; color:#34d399; }
-  .btn-success:hover { background:#047857; }
-  .btn-ghost { background:var(--bg3); color:var(--text1); border:1px solid var(--border); }
-  .btn-ghost:hover { background:var(--border); }
-  .btn-sm { padding:5px 10px; font-size:12px; }
+    .sidebar-logo-text h1 {
+      font-size: 15px; font-weight: 800;
+      color: var(--text1); line-height: 1.1;
+    }
 
-  /* Section header */
-  .section-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-  .section-hd h2 { font-size:16px; font-weight:700; }
+    .sidebar-logo-text p { font-size: 11px; color: var(--text3); margin-top: 1px; }
 
-  /* Toast */
-  #toast { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
-  .toast-item { background:var(--bg2); border:1px solid var(--border); border-left:4px solid var(--success); border-radius:8px; padding:12px 16px; font-size:13px; animation:slideIn .2s ease; max-width:300px; }
-  .toast-item.err { border-left-color:var(--danger); }
-  @keyframes slideIn { from { transform:translateX(20px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    .sidebar-nav { flex: 1; padding: 10px 8px; overflow-y: auto; }
 
-  /* Modal */
-  .modal-bg { position:fixed; inset:0; background:#00000088; z-index:500; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .modal { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:24px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; }
-  .modal h3 { font-size:16px; font-weight:700; margin-bottom:18px; }
-  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+    .nav-section {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .09em; color: var(--text4);
+      padding: 14px 8px 5px;
+      text-transform: uppercase;
+    }
 
-  /* Tabs */
-  .tabs { display:flex; gap:4px; background:var(--bg3); border-radius:10px; padding:4px; margin-bottom:20px; }
-  .tab { padding:7px 16px; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer; color:var(--text2); border:none; background:none; transition:all .15s; }
-  .tab.active { background:var(--accent); color:white; }
+    .nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 9px 10px; border-radius: 8px;
+      cursor: pointer; color: var(--text3);
+      font-size: 13px; font-weight: 500;
+      transition: all .15s; border: none;
+      background: none; width: 100%; text-align: left;
+    }
 
-  /* Period grid */
-  .period-grid { display:grid; gap:8px; }
-  .period-row { display:grid; grid-template-columns:80px 1fr; gap:8px; align-items:center; }
-  .period-label { font-size:12px; color:var(--text2); font-weight:600; }
-  .period-break { display:flex; align-items:center; gap:8px; padding:6px 12px; background:var(--warning)22; border-radius:8px; font-size:12px; color:var(--warning); border:1px dashed var(--warning)55; }
+    .nav-item:hover { background: var(--accent-muted); color: var(--accent-dark); }
 
-  /* Unread count indicator */
-  .nav-badge { background:var(--danger); color:white; border-radius:20px; padding:1px 6px; font-size:10px; margin-left:auto; }
+    .nav-item.active {
+      background: var(--accent-muted);
+      color: var(--accent-dark);
+      font-weight: 600;
+    }
 
-  /* Responsive util */
-  .hidden { display:none; }
-  .flex { display:flex; }
-  .gap-2 { gap:8px; }
-  .mt-4 { margin-top:16px; }
-  .fw-7 { font-weight:700; }
-  .text-success { color:var(--success); }
-  .text-danger { color:var(--danger); }
-  .text-warn { color:var(--warning); }
-</style>
+    .nav-item.active .nav-dot {
+      width: 3px; height: 18px;
+      background: var(--accent);
+      border-radius: 2px;
+      position: absolute; left: 8px;
+    }
+
+    .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .8; }
+    .nav-item.active svg { opacity: 1; }
+
+    .sidebar-footer {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--text4);
+      text-align: center;
+    }
+
+    /* ─── Main area ───────────────────────────────── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1; display: flex;
+      flex-direction: column; min-height: 100vh;
+    }
+
+    .topbar {
+      background: var(--topbar-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+      box-shadow: 0 1px 4px rgba(14, 165, 233, 0.06);
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--text1); }
+    .topbar-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+    .db-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+      border: 1px solid;
+    }
+
+    .db-badge.turso {
+      background: var(--success-bg);
+      color: var(--success);
+      border-color: var(--success-border);
+    }
+
+    .db-badge.local {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border-color: var(--warning-border);
+    }
+
+    .db-badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    .content { padding: 24px; flex: 1; }
+
+    /* ─── Cards ───────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 14px; font-weight: 700;
+      margin-bottom: 16px; color: var(--text1);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 14px; margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+
+    .stat-icon {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: var(--accent-muted);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .stat-icon svg { width: 17px; height: 17px; color: var(--accent); }
+
+    .stat-val {
+      font-size: 26px; font-weight: 800;
+      color: var(--text1); line-height: 1;
+    }
+
+    .stat-label { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    /* ─── Tables ──────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th {
+      text-align: left; padding: 10px 12px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text3); background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border2);
+      font-size: 13px; color: var(--text2);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fbff; }
+
+    /* ─── Badges ──────────────────────────────────── */
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-green { background: var(--success-bg); color: var(--success); }
+    .badge-red { background: var(--danger-bg); color: var(--danger); }
+    .badge-yellow { background: var(--warning-bg); color: var(--warning); }
+    .badge-gray { background: #f1f5f9; color: var(--text3); }
+    .badge-sky { background: var(--accent-muted); color: var(--accent-dark); }
+
+    /* ─── Forms ───────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+
+    label { font-size: 12px; font-weight: 600; color: var(--text2); }
+
+    input, select, textarea {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text1);
+      font-size: 13px; outline: none;
+      width: 100%; transition: border-color .15s;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    .search-wrap {
+      position: relative; margin-bottom: 16px;
+    }
+
+    .search-wrap svg {
+      position: absolute; left: 10px;
+      top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--text4);
+    }
+
+    .search-wrap input { padding-left: 32px; }
+
+    /* ─── Buttons ─────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none;
+      transition: all .15s; font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-dark); }
+
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #047857; }
+
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+
+    .btn-ghost {
+      background: white; color: var(--text2);
+      border: 1.5px solid var(--border2);
+    }
+
+    .btn-ghost:hover { background: var(--bg); border-color: var(--accent); color: var(--accent-dark); }
+
+    .btn-warning { background: var(--warning); color: white; }
+    .btn-warning:hover { background: #b45309; }
+
+    .btn-publish {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      color: white; padding: 8px 18px;
+      box-shadow: 0 2px 6px rgba(14, 165, 233, 0.35);
+    }
+
+    .btn-publish:hover {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      box-shadow: 0 3px 10px rgba(14, 165, 233, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    .btn:disabled { opacity: .55; cursor: not-allowed; pointer-events: none; }
+
+    /* ─── Section header ──────────────────────────── */
+    .section-hd {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-hd h2 { font-size: 16px; font-weight: 700; }
+    .section-hd-right { display: flex; gap: 8px; align-items: center; }
+
+    /* ─── Toast ───────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      z-index: 9999; display: flex;
+      flex-direction: column; gap: 8px;
+    }
+
+    .toast-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--success);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      box-shadow: var(--shadow);
+      animation: slideIn .2s ease;
+      max-width: 320px;
+      color: var(--text1);
+    }
+
+    .toast-item.err { border-left-color: var(--danger); }
+    .toast-item.warn { border-left-color: var(--warning); }
+
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ─── Modal ───────────────────────────────────── */
+    .modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(2px);
+      z-index: 500;
+      display: flex; align-items: center;
+      justify-content: center; padding: 20px;
+    }
+
+    .modal {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px; width: 100%;
+      max-width: 560px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      animation: modalIn .2s ease;
+    }
+
+    .modal-lg { max-width: 720px; }
+
+    @keyframes modalIn {
+      from { transform: translateY(12px) scale(.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 18px; color: var(--text1); }
+
+    .modal-actions {
+      display: flex; gap: 10px;
+      justify-content: flex-end; margin-top: 20px;
+    }
+
+    /* ─── Tabs ────────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 4px;
+      margin-bottom: 16px; flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 6px 16px; border-radius: 7px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; color: var(--text3);
+      border: none; background: none;
+      transition: all .15s; font-family: inherit;
+    }
+
+    .tab.active { background: var(--accent); color: white; }
+    .tab:not(.active):hover { background: var(--accent-muted); color: var(--accent-dark); }
+
+    /* ─── Misc utilities ──────────────────────────── */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-4 { margin-bottom: 16px; }
+    .fw-6 { font-weight: 600; }
+    .fw-7 { font-weight: 700; }
+    .text-success { color: var(--success); }
+    .text-danger { color: var(--danger); }
+    .text-warn { color: var(--warning); }
+    .text-muted { color: var(--text3); }
+    .text-accent { color: var(--accent-dark); }
+    .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+
+    .info-box {
+      background: var(--accent-muted);
+      border: 1px solid #bae6fd;
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px; color: var(--accent-text);
+    }
+
+    .warn-box {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px; color: var(--warning);
+    }
+
+    /* Period timetable grid */
+    .tt-day-row { margin-bottom: 14px; }
+    .tt-day-label {
+      font-weight: 700; font-size: 13px;
+      color: var(--text2); margin-bottom: 6px;
+    }
+
+    .tt-periods-grid {
+      display: grid; gap: 6px;
+    }
+
+    .tt-period-cell { display: flex; flex-direction: column; gap: 3px; }
+    .tt-period-label { font-size: 10px; color: var(--text4); font-weight: 600; }
+
+    /* Publish modal steps */
+    .deploy-step {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px; border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px; font-size: 13px;
+    }
+
+    .step-icon {
+      width: 28px; height: 28px;
+      border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+
+    .step-pending { background: var(--bg); color: var(--text4); border: 1px solid var(--border); }
+    .step-running { background: var(--accent-muted); color: var(--accent); }
+    .step-done { background: var(--success-bg); color: var(--success); }
+    .step-error { background: var(--danger-bg); color: var(--danger); }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(14,165,233,.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
+
 <body>
 
-<!-- Sidebar -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <h1>Adhi-IT Admin</h1>
-    <p>Full Control Dashboard</p>
-  </div>
-  <nav class="sidebar-nav">
-    <div class="nav-section">Overview</div>
-    <button class="nav-item active" onclick="showSection('dashboard')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </button>
-
-    <div class="nav-section">People</div>
-    <button class="nav-item" onclick="showSection('students')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      Students
-    </button>
-    <button class="nav-item" onclick="showSection('staff')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-      Staff & HOD
-    </button>
-
-    <div class="nav-section">Academics</div>
-    <button class="nav-item" onclick="showSection('subjects')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      Subjects
-    </button>
-    <button class="nav-item" onclick="showSection('timetable')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      Timetable
-    </button>
-    <button class="nav-item" onclick="showSection('exams')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Exams
-    </button>
-    <button class="nav-item" onclick="showSection('marks')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      Marks
-    </button>
-
-    <div class="nav-section">Operations</div>
-    <button class="nav-item" onclick="showSection('attendance')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      Attendance
-    </button>
-    <button class="nav-item" onclick="showSection('fees')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      Fees
-    </button>
-    <button class="nav-item" onclick="showSection('coding')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-      Coding Scores
-    </button>
-    <button class="nav-item" onclick="showSection('announce')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-      Announcements
-    </button>
-    <button class="nav-item" onclick="showSection('settings')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-      Settings
-    </button>
-  </nav>
-</aside>
-
-<!-- Main Content -->
-<main class="main">
-  <div class="topbar">
-    <div>
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-sub" id="topbar-sub">Adhi College of Engineering — IT Department</div>
-    </div>
-    <div style="font-size:12px;color:var(--text3);">Admin Panel · All changes reflect live on app</div>
-  </div>
-
-  <div class="content" id="content">
-    <!-- Sections injected here -->
-  </div>
-</main>
-
-<!-- Toast container -->
-<div id="toast"></div>
-
-<!-- Modal container -->
-<div id="modal-container"></div>
-
-<script>
-const API = 'http://localhost:3001';
-
-// ── Utilities ──────────────────────────────────────────────────────────────────
-async function api(method, url, body) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(API + url, opts);
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error || 'Request failed');
-  return data;
-}
-
-function toast(msg, err = false) {
-  const t = document.getElementById('toast');
-  const el = document.createElement('div');
-  el.className = 'toast-item' + (err ? ' err' : '');
-  el.textContent = msg;
-  t.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-function modal(html) {
-  const bg = document.createElement('div');
-  bg.className = 'modal-bg';
-  bg.innerHTML = `<div class="modal">${html}</div>`;
-  bg.onclick = e => { if (e.target === bg) bg.remove(); };
-  document.getElementById('modal-container').appendChild(bg);
-  return bg;
-}
-
-function closeModal() {
-  document.querySelector('.modal-bg')?.remove();
-}
-
-function badge(text, type) {
-  const map = { STUDENT:'blue', STAFF:'green', HOD:'yellow', ADMIN:'red', IA1:'blue', IA2:'green', SEMESTER:'yellow', ACTIVE:'green', INACTIVE:'red' };
-  return `<span class="badge badge-${map[text]||'gray'}">${text}</span>`;
-}
-
-function fmt(n) { return (n||0).toLocaleString('en-IN'); }
-
-// Section registry
-const sections = {};
-let currentSection = 'dashboard';
-
-function showSection(name) {
-  currentSection = name;
-  document.querySelectorAll('.nav-item').forEach(el => {
-    el.classList.toggle('active', el.getAttribute('onclick')?.includes(`'${name}'`));
-  });
-  const titles = {
-    dashboard:'Dashboard', students:'Students', staff:'Staff & HOD',
-    subjects:'Subjects', timetable:'Timetable Scheduler', exams:'Exams',
-    marks:'Marks Entry', attendance:'Attendance', fees:'Fees Management',
-    coding:'Coding Scores', announce:'Announcements', settings:'Settings'
-  };
-  document.getElementById('topbar-title').textContent = titles[name] || name;
-  const el = document.getElementById('content');
-  el.innerHTML = '<div style="color:var(--text3);padding:40px;text-align:center;">Loading...</div>';
-  sections[name]?.();
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// DASHBOARD
-// ══════════════════════════════════════════════════════════════════════════════
-sections.dashboard = async () => {
-  const stats = await api('GET', '/api/admin/stats');
-  document.getElementById('content').innerHTML = `
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-val">${stats.totalStudents}</div><div class="stat-label">Total Students</div></div>
-      <div class="stat-card"><div class="stat-val">${stats.totalStaff}</div><div class="stat-label">Staff & HOD</div></div>
-      <div class="stat-card"><div class="stat-val">${stats.totalSubjects}</div><div class="stat-label">Subjects</div></div>
-      <div class="stat-card"><div class="stat-val">${stats.totalExams}</div><div class="stat-label">Exams Created</div></div>
-      <div class="stat-card"><div class="stat-val text-warn">${stats.pendingFees}</div><div class="stat-label">Fee Pending</div></div>
-    </div>
-    <div class="card">
-      <h2 style="font-size:15px;font-weight:700;margin-bottom:12px;">Quick Guide</h2>
-      <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
-        <li style="padding:10px;background:var(--bg3);border-radius:8px;font-size:13px;color:var(--text2);">
-          <strong style="color:var(--text1);">Students/Staff</strong> — Add users here. Default password = last 4 digits of roll number. Students/Staff log in on the Android app.
-        </li>
-        <li style="padding:10px;background:var(--bg3);border-radius:8px;font-size:13px;color:var(--text2);">
-          <strong style="color:var(--text1);">Subjects</strong> — Add all subjects with year + staff assignment. Same staff can teach multiple years.
-        </li>
-        <li style="padding:10px;background:var(--bg3);border-radius:8px;font-size:13px;color:var(--text2);">
-          <strong style="color:var(--text1);">Timetable</strong> — Schedule 8-period timetable per year. Set break/lunch slots. Press Submit → reflects immediately on student/staff app.
-        </li>
-        <li style="padding:10px;background:var(--bg3);border-radius:8px;font-size:13px;color:var(--text2);">
-          <strong style="color:var(--text1);">Marks/Fees/Coding</strong> — Enter all data here. Students see it read-only on the app.
-        </li>
-        <li style="padding:10px;background:var(--bg3);border-radius:8px;font-size:13px;color:var(--text2);">
-          <strong style="color:var(--text1);">Attendance</strong> — Staff takes attendance on the Android app. Admin can view/edit from here.
-        </li>
-      </ul>
-    </div>`;
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// STUDENTS
-// ══════════════════════════════════════════════════════════════════════════════
-sections.students = async () => {
-  const { users } = await api('GET', '/api/admin/users?role=STUDENT');
-  const byYear = {};
-  users.forEach(u => { (byYear[u.year] = byYear[u.year] || []).push(u); });
-  const years = Object.keys(byYear).sort();
-
-  let tabsHtml = `<div class="tabs">` + years.map((y,i) => `<button class="tab ${i===0?'active':''}" onclick="switchStudentYear(${y})" id="stab-${y}">Year ${y} (${byYear[y].length})</button>`).join('') + `</div>`;
-
-  let tablesHtml = years.map((y,i) => `
-    <div id="stu-year-${y}" style="${i===0?'':'display:none'}">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Name</th><th>Roll Number</th><th>Year</th><th>Default Pass</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${byYear[y].map((u,idx) => `
-              <tr>
-                <td>${idx+1}</td>
-                <td style="font-weight:600;color:var(--text1)">${u.name}</td>
-                <td style="font-family:monospace">${u.rollNo}</td>
-                <td>${badge('STUDENT','blue')}</td>
-                <td style="font-family:monospace;color:var(--text3)">${u.rollNo.slice(-4)}</td>
-                <td>${u.isActive ? badge('ACTIVE','green') : badge('INACTIVE','red')}</td>
-                <td>
-                  <button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')">Edit</button>
-                  <button class="btn btn-danger btn-sm" onclick="toggleUser('${u.id}', ${u.isActive})">
-                    ${u.isActive ? 'Disable' : 'Enable'}
-                  </button>
-                </td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
       </div>
-    </div>`).join('');
-
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd">
-      <h2>Students</h2>
-      <button class="btn btn-primary" onclick="addUserModal('STUDENT')">+ Add Student</button>
-    </div>
-    ${tabsHtml}${tablesHtml}`;
-};
-
-window.switchStudentYear = (y) => {
-  document.querySelectorAll('[id^="stu-year-"]').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('[id^="stab-"]').forEach(el => el.classList.remove('active'));
-  document.getElementById(`stu-year-${y}`).style.display = 'block';
-  document.getElementById(`stab-${y}`).classList.add('active');
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// STAFF & HOD
-// ══════════════════════════════════════════════════════════════════════════════
-sections.staff = async () => {
-  const { users: staff } = await api('GET', '/api/admin/users?role=STAFF');
-  const { users: hods } = await api('GET', '/api/admin/users?role=HOD');
-  const all = [...hods, ...staff];
-
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd">
-      <h2>Staff & HOD</h2>
-      <div class="flex gap-2">
-        <button class="btn btn-ghost" onclick="addUserModal('HOD')">+ Add HOD</button>
-        <button class="btn btn-primary" onclick="addUserModal('STAFF')">+ Add Staff</button>
+      <div class="sidebar-logo-text">
+        <h1>Adhi-IT Admin</h1>
+        <p>CampusOS Control Panel</p>
       </div>
     </div>
-    <div class="card">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Name</th><th>Roll Number</th><th>Role</th><th>Incharge Year</th><th>Default Pass</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${all.map((u,i) => `
-              <tr>
-                <td>${i+1}</td>
-                <td style="font-weight:600;color:var(--text1)">${u.name}</td>
-                <td style="font-family:monospace">${u.rollNo}</td>
-                <td>${badge(u.role)}</td>
-                <td>${u.inchargeYear ? `Year ${u.inchargeYear}` : '<span style="color:var(--text3)">—</span>'}</td>
-                <td style="font-family:monospace;color:var(--text3)">${u.rollNo.slice(-4)}</td>
-                <td>${u.isActive ? badge('ACTIVE','green') : badge('INACTIVE','red')}</td>
-                <td>
-                  <button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')">Edit</button>
-                  <button class="btn btn-ghost btn-sm" onclick="resetPass('${u.id}', '${u.rollNo}')">Reset Pass</button>
-                </td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-};
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SUBJECTS
-// ══════════════════════════════════════════════════════════════════════════════
-sections.subjects = async () => {
-  const [{ subjects }, { users: staffList }] = await Promise.all([
-    api('GET', '/api/admin/subjects'),
-    api('GET', '/api/admin/users?role=STAFF')
-  ]);
-  const { users: hods } = await api('GET', '/api/admin/users?role=HOD');
-  window._staffOptions = [...hods, ...staffList];
+    <nav class="sidebar-nav">
+      <div class="nav-section">Overview</div>
+      <button class="nav-item active" onclick="showSection('dashboard')" id="nav-dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
 
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd">
-      <h2>Subjects</h2>
-      <button class="btn btn-primary" onclick="addSubjectModal()">+ Add Subject</button>
+      <div class="nav-section">People</div>
+      <button class="nav-item" onclick="showSection('students')" id="nav-students">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Students
+      </button>
+      <button class="nav-item" onclick="showSection('staff')" id="nav-staff">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Staff & HOD
+      </button>
+
+      <div class="nav-section">Academics</div>
+      <button class="nav-item" onclick="showSection('subjects')" id="nav-subjects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Subjects
+      </button>
+      <button class="nav-item" onclick="showSection('timetable')" id="nav-timetable">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Timetable
+      </button>
+      <button class="nav-item" onclick="showSection('exams')" id="nav-exams">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        Exams
+      </button>
+      <button class="nav-item" onclick="showSection('marks')" id="nav-marks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Marks Entry
+      </button>
+
+      <div class="nav-section">Operations</div>
+      <button class="nav-item" onclick="showSection('attendance')" id="nav-attendance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Attendance
+      </button>
+      <button class="nav-item" onclick="showSection('fees')" id="nav-fees">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Fees
+      </button>
+      <button class="nav-item" onclick="showSection('coding')" id="nav-coding">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Coding Scores
+      </button>
+      <button class="nav-item" onclick="showSection('announce')" id="nav-announce">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Announcements
+      </button>
+
+      <div class="nav-section">System</div>
+      <button class="nav-item" onclick="showSection('settings')" id="nav-settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      Adhi College of Engineering<br>IT Department
     </div>
-    <div class="card">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Code</th><th>Subject Name</th><th>Year</th><th>Sem</th><th>Credits</th><th>Hrs/Week</th><th>Assigned Staff</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${subjects.map(s => `
-              <tr>
-                <td style="font-family:monospace;font-weight:600;color:var(--accent)">${s.code}</td>
-                <td style="color:var(--text1);font-weight:600">${s.name}</td>
-                <td>Year ${s.year}</td><td>${s.semester}</td><td>${s.credits}</td><td>${s.hoursPerWeek}</td>
-                <td style="color:var(--text2)">${s.staffNames || '<span style="color:var(--danger)">Unassigned</span>'}</td>
-                <td>
-                  <button class="btn btn-ghost btn-sm" onclick="editSubjectModal('${s.id}')">Edit</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteSubject('${s.id}')">Delete</button>
-                </td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-};
+  </aside>
 
-// ══════════════════════════════════════════════════════════════════════════════
-// TIMETABLE
-// ══════════════════════════════════════════════════════════════════════════════
-sections.timetable = async () => {
-  const settings = await api('GET', '/api/admin/settings');
-  const ttConfig = settings.timetable_config || { periods: 8, breakAfter: [2, 5, 6] };
-
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd"><h2>Timetable Scheduler</h2></div>
-    <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">Global Timetable Settings</h3>
-      <div class="form-grid" style="margin-bottom:16px;">
-        <div class="form-group">
-          <label>Total Periods Per Day</label>
-          <input type="number" id="tt-periods" value="${ttConfig.periods}" min="1" max="12">
+  <!-- Main Content -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div>
+          <div class="topbar-title" id="topbar-title">Dashboard</div>
+          <div class="topbar-sub">Adhi College of Engineering &mdash; IT Department</div>
         </div>
-        <div class="form-group">
-          <label>Break After Period (comma separated, e.g. 2,5,6)</label>
-          <input type="text" id="tt-breaks" value="${(ttConfig.breakAfter||[]).join(',')}">
+        <div id="db-badge" class="db-badge local" style="display:none">
+          <div class="db-badge-dot"></div>
+          <span id="db-badge-text">Local DB</span>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="saveTTConfig()">Save Global Config</button>
+      <div class="topbar-right">
+        <a href="https://adhi-it.onrender.com" target="_blank" class="btn btn-ghost btn-sm">View Live App</a>
+        <button class="btn btn-publish btn-sm" onclick="publishToLive()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Publish to Live
+        </button>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="form-grid" style="margin-bottom:16px;">
-        <div class="form-group">
-          <label>Select Year to Schedule</label>
-          <select id="tt-year-sel" onchange="loadTTEditor()">
-            <option value="">— Select Year —</option>
-            <option value="2">Year 2</option>
-            <option value="3">Year 3</option>
-            <option value="4">Year 4</option>
-          </select>
-        </div>
-      </div>
-      <div id="tt-editor"></div>
-    </div>`;
-};
+    <div class="content" id="content">
+      <div style="color:var(--text3);padding:60px;text-align:center">Loading...</div>
+    </div>
+  </main>
 
-window.saveTTConfig = async () => {
-  const periods = parseInt(document.getElementById('tt-periods').value);
-  const breaks = document.getElementById('tt-breaks').value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-  await api('PUT', '/api/admin/settings', { key: 'timetable_config', value: { periods, breakAfter: breaks } });
-  toast('Timetable config saved!');
-};
+  <div id="toast"></div>
+  <div id="modal-container"></div>
 
-window.loadTTEditor = async () => {
-  const year = document.getElementById('tt-year-sel').value;
-  if (!year) return;
+  <script>
+    const API = 'http://localhost:3001';
+    const RENDER_HOOK_KEY = 'campusos_render_hook';
+    const sections = {};
+    let currentSection = 'dashboard';
 
-  const settings = await api('GET', '/api/admin/settings');
-  const ttConfig = settings.timetable_config || { periods: 8, breakAfter: [] };
-  const periods = ttConfig.periods || 8;
-  const breakAfter = ttConfig.breakAfter || [];
+    // ── Utilities ────────────────────────────────────────────────────────────────
 
-  const { subjects } = await api('GET', `/api/admin/subjects?year=${year}`);
-  const existing = await api('GET', `/api/admin/timetable/${year}`);
-  const existingConfig = existing.timetable?.config || {};
+    async function api(method, url, body) {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) opts.body = JSON.stringify(body);
+      const r = await fetch(API + url, opts);
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
 
-  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    function toast(msg, type = 'ok') {
+      const t = document.getElementById('toast');
+      const el = document.createElement('div');
+      el.className = 'toast-item' + (type === 'err' ? ' err' : type === 'warn' ? ' warn' : '');
+      el.textContent = msg;
+      t.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
 
-  let rows = '';
-  days.forEach(day => {
-    let periodCells = '';
-    for (let p = 1; p <= periods; p++) {
-      const val = existingConfig[day]?.[p-1] || '';
-      periodCells += `<div>
-        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">P${p}</div>
-        <select id="tt-${day}-${p}" style="width:100%;font-size:12px;padding:6px 4px;">
-          <option value="">—</option>
-          ${breakAfter.includes(p) ? `<option value="BREAK" ${val==='BREAK'?'selected':''}>BREAK</option><option value="LUNCH" ${val==='LUNCH'?'selected':''}>LUNCH</option>` : ''}
-          ${subjects.map(s => `<option value="${s.code}" ${val===s.code?'selected':''}>${s.code}</option>`).join('')}
-        </select>
+    function modal(html, large = false) {
+      const bg = document.createElement('div');
+      bg.className = 'modal-bg';
+      bg.innerHTML = `<div class="modal${large ? ' modal-lg' : ''}">${html}</div>`;
+      bg.onclick = e => { if (e.target === bg) bg.remove(); };
+      document.getElementById('modal-container').appendChild(bg);
+      return bg;
+    }
+
+    function closeModal() {
+      document.querySelector('.modal-bg')?.remove();
+    }
+
+    function badge(text, forceType) {
+      const map = {
+        STUDENT: 'blue', STAFF: 'green', HOD: 'yellow', ADMIN: 'sky',
+        IA1: 'blue', IA2: 'sky', SEMESTER: 'yellow',
+        ACTIVE: 'green', INACTIVE: 'red', ALL: 'gray'
+      };
+      const type = forceType || map[text] || 'gray';
+      return `<span class="badge badge-${type}">${text}</span>`;
+    }
+
+    function fmt(n) { return (n || 0).toLocaleString('en-IN'); }
+
+    function dateStr(d) {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function confirmModal(message, onConfirm) {
+      const bg = modal(`
+        <h3 style="font-size:15px">Confirm Action</h3>
+        <p style="color:var(--text2);font-size:13px;margin-bottom:20px">${message}</p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+        </div>`);
+      document.getElementById('confirm-ok-btn').onclick = () => { closeModal(); onConfirm(); };
+    }
+
+    function showSection(name) {
+      currentSection = name;
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const navEl = document.getElementById('nav-' + name);
+      if (navEl) navEl.classList.add('active');
+
+      const titles = {
+        dashboard: 'Dashboard', students: 'Students', staff: 'Staff & HOD',
+        subjects: 'Subjects', timetable: 'Timetable', exams: 'Exams',
+        marks: 'Marks Entry', attendance: 'Attendance', fees: 'Fees Management',
+        coding: 'Coding Scores', announce: 'Announcements', settings: 'Settings'
+      };
+      document.getElementById('topbar-title').textContent = titles[name] || name;
+      const el = document.getElementById('content');
+      el.innerHTML = `<div style="color:var(--text3);padding:60px;text-align:center">
+        <div class="spinner" style="margin:0 auto 12px"></div>Loading...
       </div>`;
+      if (sections[name]) {
+        sections[name]().catch(err => {
+          el.innerHTML = `<div class="card" style="text-align:center;padding:40px">
+            <div style="color:var(--danger);font-weight:700;margin-bottom:8px">Connection Error</div>
+            <div style="color:var(--text3);font-size:13px">Make sure the backend server is running.<br><br>${err.message}</div>
+          </div>`;
+        });
+      }
     }
-    rows += `<div style="margin-bottom:12px;">
-      <div style="font-weight:700;font-size:13px;color:var(--text1);margin-bottom:6px;">${day}</div>
-      <div style="display:grid;grid-template-columns:repeat(${Math.min(periods,8)},1fr);gap:6px;">${periodCells}</div>
-    </div>`;
-  });
 
-  document.getElementById('tt-editor').innerHTML = `
-    <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Year ${year} Timetable (${periods} Periods/Day)</h3>
-    ${rows}
-    <button class="btn btn-primary mt-4" onclick="submitTimetable(${year})">Submit & Publish (reflects on app)</button>`;
-};
+    // ── DB Mode Badge ─────────────────────────────────────────────────────────────
 
-window.submitTimetable = async (year) => {
-  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const settings = await api('GET', '/api/admin/settings');
-  const periods = settings.timetable_config?.periods || 8;
-
-  const config = {};
-  days.forEach(day => {
-    config[day] = [];
-    for (let p = 1; p <= periods; p++) {
-      config[day].push(document.getElementById(`tt-${day}-${p}`)?.value || '');
+    async function loadDbMode() {
+      try {
+        const data = await api('GET', '/api/admin/db-mode');
+        const badge = document.getElementById('db-badge');
+        const txt = document.getElementById('db-badge-text');
+        badge.style.display = 'inline-flex';
+        if (data.mode === 'turso') {
+          badge.className = 'db-badge turso';
+          txt.textContent = 'Turso Cloud';
+        } else {
+          badge.className = 'db-badge local';
+          txt.textContent = 'Local SQLite';
+        }
+      } catch (e) { /* silent */ }
     }
-  });
 
-  await api('POST', `/api/admin/timetable/${year}`, { config });
-  toast(`Year ${year} timetable published! Students notified.`);
-};
+    // ══════════════════════════════════════════════════════════════════════════════
+    // DASHBOARD
+    // ══════════════════════════════════════════════════════════════════════════════
 
-// ══════════════════════════════════════════════════════════════════════════════
-// EXAMS
-// ══════════════════════════════════════════════════════════════════════════════
-sections.exams = async () => {
-  const [{ exams }, { subjects }] = await Promise.all([
-    api('GET', '/api/admin/exams'),
-    api('GET', '/api/admin/subjects')
-  ]);
-  window._allSubjects = subjects;
+    sections.dashboard = async () => {
+      const [stats, dbMode] = await Promise.all([
+        api('GET', '/api/admin/stats'),
+        api('GET', '/api/admin/db-mode')
+      ]);
 
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd">
-      <h2>Exams</h2>
-      <button class="btn btn-primary" onclick="addExamModal()">+ Create Exam</button>
-    </div>
-    <div class="card">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Title</th><th>Type</th><th>Subject</th><th>Year</th><th>Date</th><th>Max Marks</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${exams.map(e => `
-              <tr>
-                <td style="font-weight:600;color:var(--text1)">${e.title}</td>
-                <td>${badge(e.type)}</td>
-                <td>${e.subjectName} <span style="color:var(--text3)">(${e.subjectCode})</span></td>
-                <td>Year ${e.year}</td>
-                <td>${e.examDate || '—'}</td>
-                <td>${e.maxMarks}</td>
-                <td>${e.isPublished ? badge('ACTIVE','green') : badge('INACTIVE','red')}</td>
-                <td>
-                  <button class="btn btn-ghost btn-sm" onclick="editExamModal('${e.id}')">Edit</button>
-                  ${!e.isPublished ? `<button class="btn btn-success btn-sm" onclick="publishExam('${e.id}', '${e.title}')">Publish</button>` : ''}
-                  <button class="btn btn-danger btn-sm" onclick="deleteExam('${e.id}')">Delete</button>
-                </td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-};
+      const dbInfo = dbMode.mode === 'turso'
+        ? `<div class="info-box">Connected to <strong>Turso Cloud Database</strong>. All changes in this panel reflect on the live app immediately.</div>`
+        : `<div class="warn-box">Connected to <strong>Local SQLite</strong>. Changes here do NOT appear on the live app. Go to Settings to check your Turso configuration.</div>`;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// MARKS
-// ══════════════════════════════════════════════════════════════════════════════
-sections.marks = async () => {
-  const { exams } = await api('GET', '/api/admin/exams');
-  const published = exams.filter(e => e.isPublished);
-
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd"><h2>Marks Entry</h2></div>
-    <div class="card" style="margin-bottom:16px;">
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Select Exam</label>
-          <select id="marks-exam-sel" onchange="loadMarksEditor()">
-            <option value="">— Select Published Exam —</option>
-            ${published.map(e => `<option value="${e.id}" data-year="${e.year}" data-max="${e.maxMarks}">${e.title} — ${e.type} — Year ${e.year}</option>`).join('')}
-          </select>
+      document.getElementById('content').innerHTML = `
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            <div class="stat-val">${stats.totalStudents}</div>
+            <div class="stat-label">Students</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+            <div class="stat-val">${stats.totalStaff}</div>
+            <div class="stat-label">Staff & HOD</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+            <div class="stat-val">${stats.totalSubjects}</div>
+            <div class="stat-label">Subjects</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="stat-val">${stats.totalExams}</div>
+            <div class="stat-label">Exams</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--warning-bg)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div class="stat-val text-warn">${stats.pendingFees}</div>
+            <div class="stat-label">Pending Fees</div>
+          </div>
         </div>
-      </div>
-    </div>
-    <div id="marks-editor"></div>`;
-};
 
-window.loadMarksEditor = async () => {
-  const sel = document.getElementById('marks-exam-sel');
-  const examId = sel.value;
-  if (!examId) return;
-  const year = sel.selectedOptions[0].dataset.year;
-  const maxMarks = sel.selectedOptions[0].dataset.max;
+        <div class="card mb-4">${dbInfo}</div>
 
-  const [{ users: students }, { marks }] = await Promise.all([
-    api('GET', `/api/admin/users?role=STUDENT&year=${year}`),
-    api('GET', `/api/admin/marks/${examId}`)
-  ]);
+        <div class="card">
+          <div class="card-title">Quick Reference</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text2);border:1px solid var(--border)">
+              <strong style="color:var(--text1)">Students / Staff</strong> — Add users here. Default password = last 4 digits of roll number. Login on the Android app.
+            </div>
+            <div style="padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text2);border:1px solid var(--border)">
+              <strong style="color:var(--text1)">Subjects</strong> — Add all subjects with year and staff assignment before creating timetable or exams.
+            </div>
+            <div style="padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text2);border:1px solid var(--border)">
+              <strong style="color:var(--text1)">Timetable</strong> — Schedule periods per year. Publish immediately pushes to student and staff app.
+            </div>
+            <div style="padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text2);border:1px solid var(--border)">
+              <strong style="color:var(--text1)">Marks / Fees / Coding</strong> — Enter data here. Students see it read-only on the app.
+            </div>
+            <div style="padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text2);border:1px solid var(--border)">
+              <strong style="color:var(--text1)">Publish to Live</strong> — Use the top-right button to push code changes to GitHub and trigger Render redeploy.
+            </div>
+          </div>
+        </div>`;
+    };
 
-  const marksMap = {};
-  marks.forEach(m => { marksMap[m.studentId] = m.marks; });
+    // ══════════════════════════════════════════════════════════════════════════════
+    // STUDENTS
+    // ══════════════════════════════════════════════════════════════════════════════
 
-  let rows = students.map(s => `
-    <tr>
-      <td style="font-family:monospace">${s.rollNo}</td>
-      <td style="font-weight:600;color:var(--text1)">${s.name}</td>
-      <td><input type="number" id="mark-${s.id}" value="${marksMap[s.id] ?? ''}" min="0" max="${maxMarks}" style="width:100px;"></td>
-      <td style="color:var(--text3)">${maxMarks}</td>
-    </tr>`).join('');
+    let _allStudents = [];
 
-  document.getElementById('marks-editor').innerHTML = `
-    <div class="card">
-      <div class="section-hd">
-        <h3 style="font-size:14px;font-weight:700;">Enter Marks (Max: ${maxMarks})</h3>
-        <button class="btn btn-primary" onclick="submitMarks('${examId}', ${JSON.stringify(students.map(s=>s.id))})">Save All Marks</button>
-      </div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Roll No</th><th>Name</th><th>Marks</th><th>Max</th></tr></thead>
-        <tbody>${rows}</tbody></table>
-      </div>
-    </div>`;
-};
+    sections.students = async () => {
+      const { users } = await api('GET', '/api/admin/users?role=STUDENT');
+      _allStudents = users;
+      renderStudentsView(users);
+    };
 
-window.submitMarks = async (examId, studentIds) => {
-  const entries = studentIds.map(id => ({
-    studentId: id,
-    marks: parseFloat(document.getElementById(`mark-${id}`)?.value) || null
-  })).filter(e => e.marks !== null);
-  await api('POST', `/api/admin/marks/${examId}`, { entries });
-  toast(`Saved marks for ${entries.length} students!`);
-};
+    function renderStudentsView(users) {
+      const byYear = {};
+      users.forEach(u => { (byYear[u.year] = byYear[u.year] || []).push(u); });
+      const years = Object.keys(byYear).sort();
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ATTENDANCE (Admin view/edit)
-// ══════════════════════════════════════════════════════════════════════════════
-sections.attendance = async () => {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd"><h2>Attendance Overview</h2></div>
-    <div class="card" style="margin-bottom:16px;">
-      <div class="form-grid">
-        <div class="form-group"><label>Year</label>
-          <select id="att-year"><option value="">All</option><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select>
+      const firstYear = years[0];
+
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd">
+          <h2>Students <span style="color:var(--text3);font-size:14px;font-weight:500">(${users.length} total)</span></h2>
+          <button class="btn btn-primary" onclick="addUserModal('STUDENT')">+ Add Student</button>
         </div>
-        <div class="form-group"><label>Date</label>
-          <input type="date" id="att-date" value="${today}">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search by name or roll number..." oninput="filterStudents(this.value)" id="stu-search">
         </div>
-        <div class="form-group" style="align-self:flex-end;">
-          <button class="btn btn-primary" onclick="loadAttendance()">Load</button>
+        ${years.length === 0 ? '<div class="card" style="text-align:center;color:var(--text3);padding:40px">No students added yet.</div>' : `
+        <div class="tabs">${years.map((y, i) => `<button class="tab ${i === 0 ? 'active' : ''}" onclick="switchStudentYear(${y})" id="stab-${y}">Year ${y} &nbsp;<span style="font-weight:500;opacity:.75">${byYear[y].length}</span></button>`).join('')}</div>
+        ${years.map((y, i) => `
+          <div id="stu-year-${y}" ${i > 0 ? 'class="hidden"' : ''}>
+            <div class="card">
+              <div class="table-wrap">
+                <table id="stu-table-${y}">
+                  <thead><tr><th>#</th><th>Name</th><th>Roll Number</th><th>Default Pass</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody>${renderStudentRows(byYear[y])}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>`).join('')}`}`;
+    }
+
+    function renderStudentRows(students) {
+      if (!students.length) return `<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">No students found</td></tr>`;
+      return students.map((u, idx) => `
+        <tr>
+          <td style="color:var(--text4)">${idx + 1}</td>
+          <td class="fw-6">${u.name}</td>
+          <td class="mono">${u.rollNo}</td>
+          <td class="mono text-muted">${u.rollNo.slice(-4)}</td>
+          <td>${u.isActive ? badge('ACTIVE', 'green') : badge('INACTIVE', 'red')}</td>
+          <td>
+            <div class="flex gap-2">
+              <button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')">Edit</button>
+              <button class="btn ${u.isActive ? 'btn-warning' : 'btn-success'} btn-sm" onclick="toggleUser('${u.id}', ${u.isActive})">${u.isActive ? 'Disable' : 'Enable'}</button>
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    window.switchStudentYear = (y) => {
+      document.querySelectorAll('[id^="stu-year-"]').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('[id^="stab-"]').forEach(el => el.classList.remove('active'));
+      document.getElementById(`stu-year-${y}`)?.classList.remove('hidden');
+      document.getElementById(`stab-${y}`)?.classList.add('active');
+    };
+
+    window.filterStudents = (q) => {
+      const filtered = _allStudents.filter(u =>
+        u.name.toLowerCase().includes(q.toLowerCase()) ||
+        u.rollNo.toLowerCase().includes(q.toLowerCase())
+      );
+      const byYear = {};
+      filtered.forEach(u => { (byYear[u.year] = byYear[u.year] || []).push(u); });
+      Object.keys(byYear).forEach(y => {
+        const tbody = document.querySelector(`#stu-table-${y} tbody`);
+        if (tbody) tbody.innerHTML = renderStudentRows(byYear[y]);
+      });
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // STAFF & HOD
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    let _allStaff = [];
+
+    sections.staff = async () => {
+      const [{ users: staff }, { users: hods }] = await Promise.all([
+        api('GET', '/api/admin/users?role=STAFF'),
+        api('GET', '/api/admin/users?role=HOD')
+      ]);
+      _allStaff = [...hods, ...staff];
+      renderStaffView(_allStaff);
+    };
+
+    function renderStaffView(users) {
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd">
+          <h2>Staff & HOD <span style="color:var(--text3);font-size:14px;font-weight:500">(${users.length} total)</span></h2>
+          <div class="flex gap-2">
+            <button class="btn btn-ghost" onclick="addUserModal('HOD')">+ Add HOD</button>
+            <button class="btn btn-primary" onclick="addUserModal('STAFF')">+ Add Staff</button>
+          </div>
         </div>
-      </div>
-    </div>
-    <div id="att-table"></div>`;
-};
-
-window.loadAttendance = async () => {
-  const year = document.getElementById('att-year').value;
-  const date = document.getElementById('att-date').value;
-  let url = '/api/admin/attendance?';
-  if (year) url += `year=${year}&`;
-  if (date) url += `date=${date}`;
-
-  const { attendance } = await api('GET', url);
-
-  document.getElementById('att-table').innerHTML = `
-    <div class="card">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Period</th><th>Subject</th><th>Year</th><th>Staff</th><th>Present</th><th>Absent</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${attendance.map(a => `
-              <tr>
-                <td>${a.date}</td><td>P${a.period}</td>
-                <td style="color:var(--text1);font-weight:600">${a.subjectName}</td>
-                <td>Year ${a.year}</td>
-                <td style="color:var(--text2)">${a.staffName||'—'}</td>
-                <td class="text-success">${JSON.parse(a.presentIds).length}</td>
-                <td class="text-danger">${JSON.parse(a.absentIds).length}</td>
-                <td><button class="btn btn-ghost btn-sm" onclick="viewAttModal('${a.id}')">View/Edit</button></td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-};
-
-window.viewAttModal = async (id) => {
-  toast('Attendance detail editing coming soon — use student IDs directly from DB for now');
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// FEES
-// ══════════════════════════════════════════════════════════════════════════════
-sections.fees = async () => {
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd"><h2>Fees Management</h2></div>
-    <div class="card" style="margin-bottom:16px;">
-      <div class="form-grid">
-        <div class="form-group"><label>Year</label>
-          <select id="fees-year" onchange="loadFees()">
-            <option value="">All Years</option>
-            <option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option>
-          </select>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search by name or roll number..." oninput="filterStaff(this.value)">
         </div>
-      </div>
-    </div>
-    <div id="fees-table"></div>
-    <div class="card mt-4">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Add / Update Fee Entry</h3>
-      <div class="form-grid">
-        <div class="form-group"><label>Student Roll No</label><input id="fee-roll" placeholder="e.g. 410123205040"></div>
-        <div class="form-group"><label>Semester</label><input id="fee-sem" type="number" placeholder="1-8" min="1" max="8"></div>
-        <div class="form-group"><label>Total Fee (₹)</label><input id="fee-total" type="number" placeholder="e.g. 45000"></div>
-        <div class="form-group"><label>Paid Amount (₹)</label><input id="fee-paid" type="number" placeholder="e.g. 30000"></div>
-        <div class="form-group"><label>Due Date</label><input id="fee-due" type="date"></div>
-        <div class="form-group"><label>Notes</label><input id="fee-notes" placeholder="Optional notes"></div>
-      </div>
-      <button class="btn btn-primary mt-4" onclick="submitFee()">Save Fee Entry</button>
-    </div>`;
-  loadFees();
-};
+        <div class="card">
+          <div class="table-wrap">
+            <table id="staff-table">
+              <thead><tr><th>#</th><th>Name</th><th>Roll Number</th><th>Role</th><th>Incharge Year</th><th>Default Pass</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>${renderStaffRows(users)}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }
 
-window.loadFees = async () => {
-  const year = document.getElementById('fees-year')?.value;
-  let url = '/api/admin/fees' + (year ? `?year=${year}` : '');
-  const { fees } = await api('GET', url);
-  document.getElementById('fees-table').innerHTML = `
-    <div class="card">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Roll No</th><th>Name</th><th>Sem</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
-          <tbody>
-            ${fees.map(f => {
-              const bal = f.totalFee - f.paidAmount;
-              return `<tr>
-                <td style="font-family:monospace">${f.rollNo}</td>
-                <td style="font-weight:600;color:var(--text1)">${f.name}</td>
-                <td>${f.semester}</td>
-                <td>₹${fmt(f.totalFee)}</td>
-                <td>₹${fmt(f.paidAmount)}</td>
-                <td class="${bal>0?'text-danger':'text-success'}">₹${fmt(bal)}</td>
-                <td>${bal<=0?badge('ACTIVE','green'):badge('INACTIVE','red')}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-};
+    function renderStaffRows(users) {
+      if (!users.length) return `<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px">No staff added yet</td></tr>`;
+      return users.map((u, i) => `
+        <tr>
+          <td style="color:var(--text4)">${i + 1}</td>
+          <td class="fw-6">${u.name}</td>
+          <td class="mono">${u.rollNo}</td>
+          <td>${badge(u.role)}</td>
+          <td>${u.inchargeYear ? `Year ${u.inchargeYear}` : '<span style="color:var(--text4)">—</span>'}</td>
+          <td class="mono text-muted">${u.rollNo.slice(-4)}</td>
+          <td>${u.isActive ? badge('ACTIVE', 'green') : badge('INACTIVE', 'red')}</td>
+          <td>
+            <div class="flex gap-2">
+              <button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')">Edit</button>
+              <button class="btn btn-ghost btn-sm" onclick="resetPass('${u.id}', '${u.rollNo}', '${u.name}', '${u.role}')">Reset Pass</button>
+            </div>
+          </td>
+        </tr>`).join('');
+    }
 
-window.submitFee = async () => {
-  const roll = document.getElementById('fee-roll').value.trim();
-  const { users } = await api('GET', `/api/admin/users?role=STUDENT`);
-  const student = users.find(u => u.rollNo === roll);
-  if (!student) return toast('Student not found', true);
+    window.filterStaff = (q) => {
+      const filtered = _allStaff.filter(u =>
+        u.name.toLowerCase().includes(q.toLowerCase()) ||
+        u.rollNo.toLowerCase().includes(q.toLowerCase())
+      );
+      const tbody = document.querySelector('#staff-table tbody');
+      if (tbody) tbody.innerHTML = renderStaffRows(filtered);
+    };
 
-  await api('POST', '/api/admin/fees', {
-    studentId: student.id,
-    semester: parseInt(document.getElementById('fee-sem').value),
-    totalFee: parseFloat(document.getElementById('fee-total').value)||0,
-    paidAmount: parseFloat(document.getElementById('fee-paid').value)||0,
-    dueDate: document.getElementById('fee-due').value || null,
-    notes: document.getElementById('fee-notes').value || null
-  });
-  toast('Fee entry saved!');
-  loadFees();
-};
+    // ══════════════════════════════════════════════════════════════════════════════
+    // USER MODALS (shared add/edit)
+    // ══════════════════════════════════════════════════════════════════════════════
 
-// ══════════════════════════════════════════════════════════════════════════════
-// CODING SCORES
-// ══════════════════════════════════════════════════════════════════════════════
-sections.coding = async () => {
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd"><h2>Coding Scores</h2></div>
-    <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Enter Coding Score</h3>
-      <div class="form-grid">
-        <div class="form-group"><label>Student Roll No</label><input id="cod-roll" placeholder="Roll number"></div>
-        <div class="form-group"><label>LeetCode Problems</label><input id="cod-lc" type="number" value="0" min="0"></div>
-        <div class="form-group"><label>HackerRank Problems</label><input id="cod-hr" type="number" value="0" min="0"></div>
-        <div class="form-group"><label>Contest Rating</label><input id="cod-cr" type="number" value="0" min="0"></div>
-      </div>
-      <button class="btn btn-primary mt-4" onclick="submitCoding()">Save</button>
-    </div>
-    <div class="card">
-      <div class="form-grid" style="margin-bottom:12px;">
-        <div class="form-group"><label>Filter by Year</label>
-          <select id="cod-year-filter" onchange="loadCoding()">
-            <option value="">All</option><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option>
-          </select>
+    window.addUserModal = (role) => {
+      const isStudent = role === 'STUDENT';
+      const isHOD = role === 'HOD';
+      modal(`
+        <h3>Add ${role}</h3>
+        <div class="form-grid">
+          <div class="form-group"><label>Full Name</label><input id="u-name" placeholder="e.g. Arjun Kumar"></div>
+          <div class="form-group"><label>Roll Number</label><input id="u-roll" placeholder="e.g. 410123205040"></div>
+          ${isStudent ? `<div class="form-group"><label>Year</label><select id="u-year"><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select></div>` : ''}
+          ${isHOD ? `<div class="form-group"><label>Incharge Year</label><select id="u-incharge"><option value="">None</option><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select></div>` : ''}
         </div>
-      </div>
-      <div id="cod-table"></div>
-    </div>`;
-  loadCoding();
-};
+        <div class="info-box mt-4">Default password will be the <strong>last 4 digits of the roll number</strong>. The user changes it from the app after first login.</div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitAddUser('${role}')">Add ${role}</button>
+        </div>`);
+    };
 
-window.loadCoding = async () => {
-  const year = document.getElementById('cod-year-filter')?.value;
-  const { scores } = await api('GET', '/api/admin/coding' + (year?`?year=${year}`:''));
-  document.getElementById('cod-table').innerHTML = `
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Roll No</th><th>Name</th><th>LeetCode</th><th>HackerRank</th><th>Contest Rating</th></tr></thead>
-        <tbody>
-          ${scores.map(s => `<tr>
-            <td style="font-family:monospace">${s.rollNo}</td>
-            <td style="font-weight:600;color:var(--text1)">${s.name}</td>
-            <td class="text-success">${s.leetcode}</td>
-            <td class="text-warn">${s.hackerrank}</td>
-            <td class="text-success">${s.contestRating}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
-};
+    window.submitAddUser = async (role) => {
+      const name = document.getElementById('u-name').value.trim();
+      const rollNo = document.getElementById('u-roll').value.trim();
+      const year = document.getElementById('u-year')?.value;
+      const inchargeYear = document.getElementById('u-incharge')?.value;
+      if (!name || !rollNo) return toast('Name and roll number are required', 'err');
 
-window.submitCoding = async () => {
-  const roll = document.getElementById('cod-roll').value.trim();
-  const { users } = await api('GET', `/api/admin/users?role=STUDENT`);
-  const student = users.find(u => u.rollNo === roll);
-  if (!student) return toast('Student not found', true);
+      try {
+        const res = await api('POST', '/api/admin/users', {
+          name, rollNo, role,
+          year: year ? parseInt(year) : null,
+          inchargeYear: inchargeYear ? parseInt(inchargeYear) : null
+        });
+        toast(`${role} added. Default password: ${res.defaultPassword}`);
+        closeModal();
+        showSection(role === 'STUDENT' ? 'students' : 'staff');
+      } catch (e) { toast(e.message, 'err'); }
+    };
 
-  await api('POST', '/api/admin/coding', {
-    studentId: student.id,
-    leetcode: parseInt(document.getElementById('cod-lc').value)||0,
-    hackerrank: parseInt(document.getElementById('cod-hr').value)||0,
-    contestRating: parseInt(document.getElementById('cod-cr').value)||0
-  });
-  toast('Coding scores saved!');
-  loadCoding();
-};
+    window.editUser = async (id) => {
+      const { users } = await api('GET', '/api/admin/users');
+      const u = users.find(u => u.id === id);
+      if (!u) return toast('User not found', 'err');
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ANNOUNCEMENTS
-// ══════════════════════════════════════════════════════════════════════════════
-sections.announce = async () => {
-  const { announcements } = await api('GET', '/api/admin/announcements');
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd"><h2>Announcements</h2></div>
-    <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Send New Announcement</h3>
-      <div class="form-grid">
-        <div class="form-group"><label>Title</label><input id="ann-title" placeholder="Announcement title"></div>
-        <div class="form-group"><label>Target Role</label>
-          <select id="ann-role">
-            <option value="">All Users</option>
-            <option value="STUDENT">Students Only</option>
-            <option value="STAFF">Staff Only</option>
-          </select>
+      modal(`
+        <h3>Edit User</h3>
+        <div class="form-grid">
+          <div class="form-group"><label>Full Name</label><input id="eu-name" value="${u.name}"></div>
+          <div class="form-group"><label>Roll Number</label><input id="eu-roll" value="${u.rollNo}"></div>
+          <div class="form-group"><label>Role</label>
+            <select id="eu-role">
+              ${['STUDENT', 'STAFF', 'HOD', 'ADMIN'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label>Year</label>
+            <select id="eu-year">
+              <option value="">—</option>
+              ${[2, 3, 4].map(y => `<option value="${y}" ${u.year == y ? 'selected' : ''}>Year ${y}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label>Incharge Year</label>
+            <select id="eu-incharge">
+              <option value="">None</option>
+              ${[2, 3, 4].map(y => `<option value="${y}" ${u.inchargeYear == y ? 'selected' : ''}>Year ${y}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label>Account Status</label>
+            <select id="eu-active">
+              <option value="1" ${u.isActive ? 'selected' : ''}>Active</option>
+              <option value="0" ${!u.isActive ? 'selected' : ''}>Disabled</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group"><label>Target Year (optional)</label>
-          <select id="ann-year">
-            <option value="">All Years</option>
-            <option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option>
-          </select>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="eu-reset"> Reset password to last 4 digits of roll number
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitEditUser('${id}')">Save Changes</button>
+        </div>`);
+    };
+
+    window.submitEditUser = async (id) => {
+      const payload = {
+        name: document.getElementById('eu-name').value.trim(),
+        rollNo: document.getElementById('eu-roll').value.trim(),
+        role: document.getElementById('eu-role').value,
+        year: parseInt(document.getElementById('eu-year').value) || null,
+        inchargeYear: parseInt(document.getElementById('eu-incharge').value) || null,
+        isActive: document.getElementById('eu-active').value === '1',
+        resetPassword: document.getElementById('eu-reset').checked
+      };
+      try {
+        const res = await api('PUT', `/api/admin/users/${id}`, payload);
+        if (res.defaultPassword) toast(`Password reset to: ${res.defaultPassword}`);
+        else toast('User updated successfully');
+        closeModal();
+        showSection(currentSection);
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    window.toggleUser = async (id, isActive) => {
+      const { users } = await api('GET', '/api/admin/users');
+      const u = users.find(u => u.id === id);
+      if (!u) return;
+      try {
+        await api('PUT', `/api/admin/users/${id}`, { ...u, isActive: !isActive });
+        toast(isActive ? 'User disabled' : 'User enabled');
+        showSection(currentSection);
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // FIXED: No longer sends name:'—' — fetches the actual user before reset
+    window.resetPass = async (id, rollNo, name, role) => {
+      confirmModal(`Reset password for <strong>${name}</strong> (${rollNo}) to <strong>${rollNo.slice(-4)}</strong>?`, async () => {
+        try {
+          await api('PUT', `/api/admin/users/${id}`, {
+            name, rollNo, role,
+            isActive: true, resetPassword: true
+          });
+          toast(`Password reset to: ${rollNo.slice(-4)}`);
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // SUBJECTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.subjects = async () => {
+      const [{ subjects }, { users: staff }, { users: hods }] = await Promise.all([
+        api('GET', '/api/admin/subjects'),
+        api('GET', '/api/admin/users?role=STAFF'),
+        api('GET', '/api/admin/users?role=HOD')
+      ]);
+      window._staffOptions = [...hods, ...staff];
+      window._subjectsCache = subjects;
+
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd">
+          <h2>Subjects <span style="color:var(--text3);font-size:14px;font-weight:500">(${subjects.length})</span></h2>
+          <button class="btn btn-primary" onclick="addSubjectModal()">+ Add Subject</button>
         </div>
-      </div>
-      <div class="form-group mt-4">
-        <label>Message</label>
-        <textarea id="ann-body" rows="4" placeholder="Write your announcement..."></textarea>
-      </div>
-      <button class="btn btn-primary mt-4" onclick="sendAnnouncement()">Send (reflects on app instantly)</button>
-    </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Code</th><th>Subject Name</th><th>Year</th><th>Sem</th><th>Credits</th><th>Hrs/Wk</th><th>Assigned Staff</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${subjects.map(s => `
+                  <tr>
+                    <td class="mono text-accent fw-6">${s.code}</td>
+                    <td class="fw-6">${s.name}</td>
+                    <td>Year ${s.year}</td>
+                    <td>${s.semester}</td>
+                    <td>${s.credits}</td>
+                    <td>${s.hoursPerWeek}</td>
+                    <td style="color:var(--text2)">${s.staffNames || '<span style="color:var(--danger)">Unassigned</span>'}</td>
+                    <td>
+                      <div class="flex gap-2">
+                        <button class="btn btn-ghost btn-sm" onclick="editSubjectModal('${s.id}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSubject('${s.id}')">Delete</button>
+                      </div>
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    };
 
-    <div class="card">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Announcement History</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Title</th><th>Message</th><th>Target</th><th>Sent By</th></tr></thead>
-          <tbody>
-            ${announcements.map(a => `<tr>
-              <td style="white-space:nowrap">${new Date(a.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</td>
-              <td style="font-weight:600;color:var(--text1)">${a.title}</td>
-              <td style="color:var(--text2);max-width:300px;">${a.body}</td>
-              <td>${a.targetRole ? badge(a.targetRole) : badge('ALL','gray')} ${a.targetYear ? `Year ${a.targetYear}` : ''}</td>
-              <td style="color:var(--text3)">${a.senderName||'Admin'}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-};
-
-window.sendAnnouncement = async () => {
-  const title = document.getElementById('ann-title').value.trim();
-  const body = document.getElementById('ann-body').value.trim();
-  if (!title || !body) return toast('Title and message required', true);
-
-  await api('POST', '/api/admin/announcements', {
-    title, body,
-    targetRole: document.getElementById('ann-role').value || null,
-    targetYear: parseInt(document.getElementById('ann-year').value) || null
-  });
-  toast('Announcement sent! Reflected on app instantly.');
-  sections.announce();
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// SETTINGS
-// ══════════════════════════════════════════════════════════════════════════════
-sections.settings = async () => {
-  const settings = await api('GET', '/api/admin/settings');
-  const ttConfig = settings.timetable_config || { periods: 8, breakAfter: [] };
-
-  document.getElementById('content').innerHTML = `
-    <div class="section-hd"><h2>System Settings</h2></div>
-    <div class="card">
-      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Timetable Configuration</h3>
-      <div class="form-grid" style="margin-bottom:16px;">
-        <div class="form-group">
-          <label>Default Periods Per Day</label>
-          <input type="number" id="s-periods" value="${ttConfig.periods}" min="1" max="12">
+    function subjectModalForm(s = {}) {
+      const staffOptions = (window._staffOptions || []).map(st =>
+        `<option value="${st.id}" ${(s.staffIds || []).includes(st.id) ? 'selected' : ''}>${st.name} (${st.rollNo})</option>`
+      ).join('');
+      return `
+        <div class="form-grid">
+          <div class="form-group"><label>Subject Name</label><input id="sm-name" value="${s.name || ''}" placeholder="e.g. Data Structures"></div>
+          <div class="form-group"><label>Subject Code</label><input id="sm-code" value="${s.code || ''}" placeholder="e.g. CS3301"></div>
+          <div class="form-group"><label>Year</label>
+            <select id="sm-year">
+              ${[2, 3, 4].map(y => `<option value="${y}" ${s.year == y ? 'selected' : ''}>Year ${y}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label>Semester</label><input id="sm-sem" type="number" value="${s.semester || 1}" min="1" max="8"></div>
+          <div class="form-group"><label>Credits</label><input id="sm-credits" type="number" value="${s.credits || 3}" min="1" max="5"></div>
+          <div class="form-group"><label>Hours / Week</label><input id="sm-hrs" type="number" value="${s.hoursPerWeek || 4}" min="1" max="8"></div>
         </div>
-        <div class="form-group">
-          <label>Break After Periods (comma separated)</label>
-          <input type="text" id="s-breaks" value="${(ttConfig.breakAfter||[]).join(',')}" placeholder="e.g. 2,5,6">
+        <div class="form-group mt-4">
+          <label>Assign Staff (hold Ctrl/Cmd for multiple)</label>
+          <select id="sm-staff" multiple style="height:110px">${staffOptions}</select>
+        </div>`;
+    }
+
+    window.addSubjectModal = () => {
+      modal(`
+        <h3>Add Subject</h3>
+        ${subjectModalForm()}
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitSubject()">Add Subject</button>
+        </div>`);
+    };
+
+    window.submitSubject = async () => {
+      const staffIds = Array.from(document.getElementById('sm-staff').selectedOptions).map(o => o.value);
+      try {
+        await api('POST', '/api/admin/subjects', {
+          name: document.getElementById('sm-name').value.trim(),
+          code: document.getElementById('sm-code').value.trim().toUpperCase(),
+          year: parseInt(document.getElementById('sm-year').value),
+          semester: parseInt(document.getElementById('sm-sem').value),
+          credits: parseInt(document.getElementById('sm-credits').value),
+          hoursPerWeek: parseInt(document.getElementById('sm-hrs').value),
+          staffIds
+        });
+        toast('Subject added');
+        closeModal();
+        sections.subjects();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // IMPLEMENTED: was missing before
+    window.editSubjectModal = async (id) => {
+      // Get cached or fetch subject detail
+      let subj = (window._subjectsCache || []).find(s => s.id === id);
+      if (!subj) {
+        const { subjects } = await api('GET', '/api/admin/subjects');
+        window._subjectsCache = subjects;
+        subj = subjects.find(s => s.id === id);
+      }
+      if (!subj) return toast('Subject not found', 'err');
+
+      // Fetch which staff are currently assigned
+      const assignedRes = await fetch(`${API}/api/admin/subjects`).then(r => r.json());
+      const fullSubj = assignedRes.subjects.find(s => s.id === id) || subj;
+
+      // Get staff IDs from subject_staff (we don't have them directly; re-fetch is needed)
+      // Workaround: match by staff names in staffNames field
+      // Since we don't have IDs, we pre-select by name match
+      modal(`
+        <h3>Edit Subject</h3>
+        ${subjectModalForm({ ...fullSubj, staffIds: [] })}
+        <div class="info-box mt-4" style="font-size:12px">Re-select the staff to assign. Hold Ctrl/Cmd to select multiple.</div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitEditSubject('${id}')">Save Changes</button>
+        </div>`);
+    };
+
+    window.submitEditSubject = async (id) => {
+      const staffIds = Array.from(document.getElementById('sm-staff').selectedOptions).map(o => o.value);
+      try {
+        await api('PUT', `/api/admin/subjects/${id}`, {
+          name: document.getElementById('sm-name').value.trim(),
+          code: document.getElementById('sm-code').value.trim().toUpperCase(),
+          year: parseInt(document.getElementById('sm-year').value),
+          semester: parseInt(document.getElementById('sm-sem').value),
+          credits: parseInt(document.getElementById('sm-credits').value),
+          hoursPerWeek: parseInt(document.getElementById('sm-hrs').value),
+          staffIds
+        });
+        toast('Subject updated');
+        closeModal();
+        sections.subjects();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    window.deleteSubject = (id) => {
+      confirmModal('Delete this subject? This also removes it from the timetable.', async () => {
+        try {
+          await api('DELETE', `/api/admin/subjects/${id}`);
+          toast('Subject removed');
+          sections.subjects();
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // TIMETABLE
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.timetable = async () => {
+      const settings = await api('GET', '/api/admin/settings');
+      const ttConfig = settings.timetable_config || { periods: 8, breakAfter: [2, 5, 6] };
+
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd"><h2>Timetable Scheduler</h2></div>
+        <div class="card mb-4">
+          <div class="card-title">Period Settings</div>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label>Total Periods Per Day</label>
+              <input type="number" id="tt-periods" value="${ttConfig.periods}" min="1" max="12">
+            </div>
+            <div class="form-group">
+              <label>Break / Lunch After Period (comma-separated)</label>
+              <input type="text" id="tt-breaks" value="${(ttConfig.breakAfter || []).join(',')}" placeholder="e.g. 2,5,6">
+            </div>
+          </div>
+          <button class="btn btn-ghost" onclick="saveTTConfig()">Save Period Settings</button>
         </div>
-      </div>
-      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
-    </div>`;
-};
+        <div class="card">
+          <div class="card-title">Schedule Per Year</div>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label>Select Year</label>
+              <select id="tt-year-sel" onchange="loadTTEditor()">
+                <option value="">— Select Year —</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+              </select>
+            </div>
+          </div>
+          <div id="tt-editor"></div>
+        </div>`;
+    };
 
-window.saveSettings = async () => {
-  const periods = parseInt(document.getElementById('s-periods').value);
-  const breaks = document.getElementById('s-breaks').value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-  await api('PUT', '/api/admin/settings', { key: 'timetable_config', value: { periods, breakAfter: breaks } });
-  toast('Settings saved! App will reflect updated timetable config.');
-};
+    window.saveTTConfig = async () => {
+      const periods = parseInt(document.getElementById('tt-periods').value);
+      const breaks = document.getElementById('tt-breaks').value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      try {
+        await api('PUT', '/api/admin/settings', { key: 'timetable_config', value: { periods, breakAfter: breaks } });
+        toast('Period settings saved');
+      } catch (e) { toast(e.message, 'err'); }
+    };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// USER MODALS (shared between students/staff)
-// ══════════════════════════════════════════════════════════════════════════════
-window.addUserModal = (role) => {
-  const isStudent = role === 'STUDENT';
-  const isStaff = role === 'STAFF';
-  const bg = modal(`
-    <h3>Add ${role}</h3>
-    <div class="form-grid">
-      <div class="form-group"><label>Full Name</label><input id="u-name" placeholder="e.g. Arjun Kumar"></div>
-      <div class="form-group"><label>Roll Number</label><input id="u-roll" placeholder="e.g. 410123205040"></div>
-      ${isStudent ? `<div class="form-group"><label>Year</label><select id="u-year"><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select></div>` : ''}
-      ${isStaff ? `<div class="form-group"><label>Incharge Year (optional)</label><select id="u-incharge"><option value="">None</option><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select></div>` : ''}
-    </div>
-    <div class="card mt-4" style="background:var(--bg3);padding:12px;">
-      <p style="font-size:12px;color:var(--text2);">Default password will be the <strong>last 4 digits of the roll number</strong>. Student/Staff must use this to first log in, then can change their password from the app.</p>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitAddUser('${role}')">Add ${role}</button>
-    </div>`);
-};
+    window.loadTTEditor = async () => {
+      const year = document.getElementById('tt-year-sel').value;
+      if (!year) return;
+      document.getElementById('tt-editor').innerHTML = `<div style="color:var(--text3);padding:20px 0">Loading...</div>`;
 
-window.submitAddUser = async (role) => {
-  const name = document.getElementById('u-name').value.trim();
-  const rollNo = document.getElementById('u-roll').value.trim();
-  const year = document.getElementById('u-year')?.value;
-  const inchargeYear = document.getElementById('u-incharge')?.value;
-  if (!name || !rollNo) return toast('Name and roll number required', true);
+      const settings = await api('GET', '/api/admin/settings');
+      const ttConfig = settings.timetable_config || { periods: 8, breakAfter: [] };
+      const periods = ttConfig.periods || 8;
+      const breakAfter = ttConfig.breakAfter || [];
 
-  const res = await api('POST', '/api/admin/users', { name, rollNo, role, year: year ? parseInt(year) : null, inchargeYear: inchargeYear ? parseInt(inchargeYear) : null });
-  toast(`${role} added! Default password: ${res.defaultPassword}`);
-  closeModal();
-  showSection(role === 'STUDENT' ? 'students' : 'staff');
-};
+      const { subjects } = await api('GET', `/api/admin/subjects?year=${year}`);
+      const existing = await api('GET', `/api/admin/timetable/${year}`);
+      const existingConfig = existing.timetable?.config || {};
 
-window.editUser = async (id) => {
-  const { users } = await api('GET', '/api/admin/users');
-  const u = users.find(u => u.id === id);
-  if (!u) return;
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const cols = Math.min(periods, 9);
 
-  const bg = modal(`
-    <h3>Edit User</h3>
-    <div class="form-grid">
-      <div class="form-group"><label>Full Name</label><input id="eu-name" value="${u.name}"></div>
-      <div class="form-group"><label>Roll Number</label><input id="eu-roll" value="${u.rollNo}"></div>
-      <div class="form-group"><label>Role</label>
-        <select id="eu-role">
-          ${['STUDENT','STAFF','HOD','ADMIN'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group"><label>Year</label>
-        <select id="eu-year">
-          <option value="">—</option>
-          ${[2,3,4].map(y => `<option value="${y}" ${u.year==y?'selected':''}>${y}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group"><label>Incharge Year</label>
-        <select id="eu-incharge">
-          <option value="">None</option>
-          ${[2,3,4].map(y => `<option value="${y}" ${u.inchargeYear==y?'selected':''}>${y}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group"><label>Status</label>
-        <select id="eu-active"><option value="1" ${u.isActive?'selected':''}>Active</option><option value="0" ${!u.isActive?'selected':''}>Disabled</option></select>
-      </div>
-    </div>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;cursor:pointer;">
-      <input type="checkbox" id="eu-reset"> Reset password to last 4 digits of roll
-    </label>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitEditUser('${id}')">Save Changes</button>
-    </div>`);
-};
+      let rows = days.map(day => {
+        const cells = Array.from({ length: periods }, (_, i) => {
+          const p = i + 1;
+          const val = existingConfig[day]?.[i] || '';
+          const isBreak = breakAfter.includes(p);
+          return `<div class="tt-period-cell">
+            <div class="tt-period-label">P${p}</div>
+            <select id="tt-${day}-${p}" style="font-size:11px;padding:5px 4px">
+              <option value="">—</option>
+              ${isBreak ? `<option value="BREAK" ${val === 'BREAK' ? 'selected' : ''}>BREAK</option><option value="LUNCH" ${val === 'LUNCH' ? 'selected' : ''}>LUNCH</option>` : ''}
+              ${subjects.map(s => `<option value="${s.code}" ${val === s.code ? 'selected' : ''}>${s.code}</option>`).join('')}
+            </select>
+          </div>`;
+        }).join('');
+        return `<div class="tt-day-row">
+          <div class="tt-day-label">${day}</div>
+          <div class="tt-periods-grid" style="grid-template-columns:repeat(${cols},1fr)">${cells}</div>
+        </div>`;
+      }).join('');
 
-window.submitEditUser = async (id) => {
-  const payload = {
-    name: document.getElementById('eu-name').value,
-    rollNo: document.getElementById('eu-roll').value,
-    role: document.getElementById('eu-role').value,
-    year: parseInt(document.getElementById('eu-year').value) || null,
-    inchargeYear: parseInt(document.getElementById('eu-incharge').value) || null,
-    isActive: document.getElementById('eu-active').value === '1',
-    resetPassword: document.getElementById('eu-reset').checked
-  };
-  const res = await api('PUT', `/api/admin/users/${id}`, payload);
-  if (res.defaultPassword) toast(`Password reset to: ${res.defaultPassword}`);
-  else toast('User updated!');
-  closeModal();
-  showSection(currentSection);
-};
+      document.getElementById('tt-editor').innerHTML = `
+        <div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:14px">Year ${year} — ${periods} Periods / Day</div>
+        ${rows}
+        <button class="btn btn-primary mt-4" onclick="submitTimetable(${year})">Save & Publish to App</button>`;
+    };
 
-window.toggleUser = async (id, isActive) => {
-  const { users } = await api('GET', '/api/admin/users');
-  const u = users.find(u => u.id === id);
-  if (!u) return;
-  await api('PUT', `/api/admin/users/${id}`, { ...u, isActive: !isActive });
-  toast(isActive ? 'User disabled' : 'User enabled');
-  showSection(currentSection);
-};
+    window.submitTimetable = async (year) => {
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const settings = await api('GET', '/api/admin/settings');
+      const periods = settings.timetable_config?.periods || 8;
+      const config = {};
+      days.forEach(day => {
+        config[day] = Array.from({ length: periods }, (_, i) =>
+          document.getElementById(`tt-${day}-${i + 1}`)?.value || ''
+        );
+      });
+      try {
+        await api('POST', `/api/admin/timetable/${year}`, { config });
+        toast(`Year ${year} timetable published. Students notified.`);
+      } catch (e) { toast(e.message, 'err'); }
+    };
 
-window.resetPass = async (id, rollNo) => {
-  if (!confirm(`Reset password for roll ${rollNo} to last 4 digits: ${rollNo.slice(-4)}?`)) return;
-  await api('PUT', `/api/admin/users/${id}`, { resetPassword: true, rollNo, name: '—', role: 'STAFF', isActive: true });
-  toast(`Password reset to ${rollNo.slice(-4)}`);
-};
+    // ══════════════════════════════════════════════════════════════════════════════
+    // EXAMS
+    // ══════════════════════════════════════════════════════════════════════════════
 
-// SUBJECT MODALS
-window.addSubjectModal = () => {
-  const staffOptions = (window._staffOptions || []).map(s => `<option value="${s.id}">${s.name} (${s.rollNo})</option>`).join('');
-  modal(`
-    <h3>Add Subject</h3>
-    <div class="form-grid">
-      <div class="form-group"><label>Subject Name</label><input id="s-name" placeholder="e.g. Data Structures"></div>
-      <div class="form-group"><label>Subject Code</label><input id="s-code" placeholder="e.g. CS3301"></div>
-      <div class="form-group"><label>Year</label><select id="s-year"><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select></div>
-      <div class="form-group"><label>Semester</label><input id="s-sem" type="number" value="1" min="1" max="8"></div>
-      <div class="form-group"><label>Credits</label><input id="s-credits" type="number" value="3" min="1" max="5"></div>
-      <div class="form-group"><label>Hours/Week</label><input id="s-hrs" type="number" value="4" min="1" max="8"></div>
-    </div>
-    <div class="form-group mt-4"><label>Assign Staff (hold Ctrl for multiple)</label>
-      <select id="s-staff" multiple style="height:120px;">${staffOptions}</select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitSubject()">Add Subject</button>
-    </div>`);
-};
+    sections.exams = async () => {
+      const [{ exams }, { subjects }] = await Promise.all([
+        api('GET', '/api/admin/exams'),
+        api('GET', '/api/admin/subjects')
+      ]);
+      window._allSubjects = subjects;
 
-window.submitSubject = async () => {
-  const sel = document.getElementById('s-staff');
-  const staffIds = Array.from(sel.selectedOptions).map(o => o.value);
-  await api('POST', '/api/admin/subjects', {
-    name: document.getElementById('s-name').value,
-    code: document.getElementById('s-code').value,
-    year: parseInt(document.getElementById('s-year').value),
-    semester: parseInt(document.getElementById('s-sem').value),
-    credits: parseInt(document.getElementById('s-credits').value),
-    hoursPerWeek: parseInt(document.getElementById('s-hrs').value),
-    staffIds
-  });
-  toast('Subject added!');
-  closeModal();
-  sections.subjects();
-};
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd">
+          <h2>Exams</h2>
+          <button class="btn btn-primary" onclick="addExamModal()">+ Create Exam</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Title</th><th>Type</th><th>Subject</th><th>Year</th><th>Date</th><th>Max</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${exams.length === 0 ? `<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px">No exams created yet</td></tr>` :
+                  exams.map(e => `
+                    <tr>
+                      <td class="fw-6">${e.title}</td>
+                      <td>${badge(e.type)}</td>
+                      <td>${e.subjectName} <span style="color:var(--text4)">(${e.subjectCode})</span></td>
+                      <td>Year ${e.year}</td>
+                      <td>${dateStr(e.examDate)}</td>
+                      <td>${e.maxMarks}</td>
+                      <td>${e.isPublished ? badge('ACTIVE', 'green') : badge('INACTIVE', 'red')}</td>
+                      <td>
+                        <div class="flex gap-2">
+                          <button class="btn btn-ghost btn-sm" onclick="editExamModal('${e.id}')">Edit</button>
+                          ${!e.isPublished ? `<button class="btn btn-success btn-sm" onclick="publishExam('${e.id}', '${e.title}')">Publish</button>` : ''}
+                          <button class="btn btn-danger btn-sm" onclick="deleteExam('${e.id}')">Delete</button>
+                        </div>
+                      </td>
+                    </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    };
 
-window.deleteSubject = async (id) => {
-  if (!confirm('Delete this subject?')) return;
-  await api('DELETE', `/api/admin/subjects/${id}`);
-  toast('Subject removed');
-  sections.subjects();
-};
+    function examModalForm(e = {}) {
+      const subOpts = (window._allSubjects || []).map(s =>
+        `<option value="${s.id}" ${e.subjectId === s.id ? 'selected' : ''}>${s.name} (Y${s.year})</option>`
+      ).join('');
+      return `
+        <div class="form-grid">
+          <div class="form-group"><label>Exam Title</label><input id="em-title" value="${e.title || ''}" placeholder="e.g. IA1 - Data Structures"></div>
+          <div class="form-group"><label>Type</label>
+            <select id="em-type">
+              ${['IA1', 'IA2', 'SEMESTER'].map(t => `<option value="${t}" ${e.type === t ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label>Subject</label><select id="em-subject">${subOpts}</select></div>
+          <div class="form-group"><label>Year</label>
+            <select id="em-year">
+              ${[2, 3, 4].map(y => `<option value="${y}" ${e.year == y ? 'selected' : ''}>Year ${y}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label>Exam Date</label><input id="em-date" type="date" value="${e.examDate || ''}"></div>
+          <div class="form-group"><label>Max Marks</label><input id="em-max" type="number" value="${e.maxMarks || 50}"></div>
+        </div>`;
+    }
 
-// EXAM MODALS
-window.addExamModal = () => {
-  const subOpts = (window._allSubjects || []).map(s => `<option value="${s.id}">${s.name} (Y${s.year})</option>`).join('');
-  modal(`
-    <h3>Create Exam</h3>
-    <div class="form-grid">
-      <div class="form-group"><label>Exam Title</label><input id="e-title" placeholder="e.g. IA1 - Data Structures"></div>
-      <div class="form-group"><label>Type</label><select id="e-type"><option value="IA1">IA1</option><option value="IA2">IA2</option><option value="SEMESTER">SEMESTER</option></select></div>
-      <div class="form-group"><label>Subject</label><select id="e-subject">${subOpts}</select></div>
-      <div class="form-group"><label>Year</label><select id="e-year"><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select></div>
-      <div class="form-group"><label>Exam Date</label><input id="e-date" type="date"></div>
-      <div class="form-group"><label>Max Marks</label><input id="e-max" type="number" value="50"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitExam()">Create Exam</button>
-    </div>`);
-};
+    window.addExamModal = () => {
+      modal(`<h3>Create Exam</h3>${examModalForm()}
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitExam()">Create Exam</button>
+        </div>`);
+    };
 
-window.submitExam = async () => {
-  await api('POST', '/api/admin/exams', {
-    title: document.getElementById('e-title').value,
-    type: document.getElementById('e-type').value,
-    subjectId: document.getElementById('e-subject').value,
-    year: parseInt(document.getElementById('e-year').value),
-    examDate: document.getElementById('e-date').value || null,
-    maxMarks: parseFloat(document.getElementById('e-max').value) || 50
-  });
-  toast('Exam created!');
-  closeModal();
-  sections.exams();
-};
+    window.submitExam = async () => {
+      try {
+        await api('POST', '/api/admin/exams', {
+          title: document.getElementById('em-title').value.trim(),
+          type: document.getElementById('em-type').value,
+          subjectId: document.getElementById('em-subject').value,
+          year: parseInt(document.getElementById('em-year').value),
+          examDate: document.getElementById('em-date').value || null,
+          maxMarks: parseFloat(document.getElementById('em-max').value) || 50
+        });
+        toast('Exam created');
+        closeModal();
+        sections.exams();
+      } catch (e) { toast(e.message, 'err'); }
+    };
 
-window.publishExam = async (id, title) => {
-  if (!confirm(`Publish exam "${title}"? Students will be notified.`)) return;
-  const exams = (await api('GET', '/api/admin/exams')).exams;
-  const exam = exams.find(e => e.id === id);
-  await api('PUT', `/api/admin/exams/${id}`, { ...exam, isPublished: true });
-  toast('Exam published! Students notified on app.');
-  sections.exams();
-};
+    window.editExamModal = async (id) => {
+      const { exams } = await api('GET', '/api/admin/exams');
+      const e = exams.find(ex => ex.id === id);
+      if (!e) return;
+      modal(`<h3>Edit Exam</h3>${examModalForm(e)}
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitEditExam('${id}', '${e.subjectId}', ${e.year}, ${e.isPublished})">Save</button>
+        </div>`);
+    };
 
-window.deleteExam = async (id) => {
-  if (!confirm('Delete this exam? All marks for this exam will also be deleted.')) return;
-  await api('DELETE', `/api/admin/exams/${id}`);
-  toast('Exam deleted');
-  sections.exams();
-};
+    window.submitEditExam = async (id, subjectId, year, isPublished) => {
+      try {
+        await api('PUT', `/api/admin/exams/${id}`, {
+          title: document.getElementById('em-title').value.trim(),
+          type: document.getElementById('em-type').value,
+          examDate: document.getElementById('em-date').value || null,
+          maxMarks: parseFloat(document.getElementById('em-max').value),
+          subjectId, year, isPublished
+        });
+        toast('Exam updated');
+        closeModal();
+        sections.exams();
+      } catch (e) { toast(e.message, 'err'); }
+    };
 
-window.editExamModal = async (id) => {
-  const { exams } = await api('GET', '/api/admin/exams');
-  const e = exams.find(ex => ex.id === id);
-  modal(`
-    <h3>Edit Exam</h3>
-    <div class="form-grid">
-      <div class="form-group"><label>Title</label><input id="ee-title" value="${e.title}"></div>
-      <div class="form-group"><label>Type</label><select id="ee-type">
-        ${['IA1','IA2','SEMESTER'].map(t => `<option value="${t}" ${e.type===t?'selected':''}>${t}</option>`).join('')}
-      </select></div>
-      <div class="form-group"><label>Exam Date</label><input id="ee-date" type="date" value="${e.examDate||''}"></div>
-      <div class="form-group"><label>Max Marks</label><input id="ee-max" type="number" value="${e.maxMarks}"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitEditExam('${id}', '${e.subjectId}', ${e.year}, ${e.isPublished})">Save</button>
-    </div>`);
-};
+    window.publishExam = (id, title) => {
+      confirmModal(`Publish exam "<strong>${title}</strong>"? Students will receive a notification.`, async () => {
+        const { exams } = await api('GET', '/api/admin/exams');
+        const exam = exams.find(e => e.id === id);
+        if (!exam) return;
+        try {
+          await api('PUT', `/api/admin/exams/${id}`, { ...exam, isPublished: true });
+          toast('Exam published. Students notified.');
+          sections.exams();
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    };
 
-window.submitEditExam = async (id, subjectId, year, isPublished) => {
-  await api('PUT', `/api/admin/exams/${id}`, {
-    title: document.getElementById('ee-title').value,
-    type: document.getElementById('ee-type').value,
-    examDate: document.getElementById('ee-date').value || null,
-    maxMarks: parseFloat(document.getElementById('ee-max').value),
-    subjectId, year, isPublished
-  });
-  toast('Exam updated!');
-  closeModal();
-  sections.exams();
-};
+    window.deleteExam = (id) => {
+      confirmModal('Delete this exam? All recorded marks will also be removed.', async () => {
+        try {
+          await api('DELETE', `/api/admin/exams/${id}`);
+          toast('Exam deleted');
+          sections.exams();
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    };
 
-// Init
-showSection('dashboard');
-</script>
+    // ══════════════════════════════════════════════════════════════════════════════
+    // MARKS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.marks = async () => {
+      const { exams } = await api('GET', '/api/admin/exams');
+      const published = exams.filter(e => e.isPublished);
+
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd"><h2>Marks Entry</h2></div>
+        <div class="card mb-4">
+          <div class="card-title">Select Exam</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Published Exam</label>
+              <select id="marks-exam-sel" onchange="loadMarksEditor()">
+                <option value="">— Select an exam —</option>
+                ${published.map(e => `<option value="${e.id}" data-year="${e.year}" data-max="${e.maxMarks}">${e.title} — ${e.type} — Year ${e.year}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="marks-editor"></div>`;
+    };
+
+    window.loadMarksEditor = async () => {
+      const sel = document.getElementById('marks-exam-sel');
+      const examId = sel.value;
+      if (!examId) return;
+      const year = sel.selectedOptions[0].dataset.year;
+      const maxMarks = sel.selectedOptions[0].dataset.max;
+
+      document.getElementById('marks-editor').innerHTML = `<div style="color:var(--text3);padding:20px 0">Loading students...</div>`;
+
+      const [{ users: students }, { marks }] = await Promise.all([
+        api('GET', `/api/admin/users?role=STUDENT&year=${year}`),
+        api('GET', `/api/admin/marks/${examId}`)
+      ]);
+      const marksMap = {};
+      marks.forEach(m => { marksMap[m.studentId] = m.marks; });
+
+      document.getElementById('marks-editor').innerHTML = `
+        <div class="card">
+          <div class="section-hd">
+            <div class="card-title" style="margin:0">Enter Marks <span style="font-weight:500;color:var(--text3)">(Max: ${maxMarks})</span></div>
+            <button class="btn btn-primary" onclick="submitMarks('${examId}', ${JSON.stringify(students.map(s => s.id))})">Save All Marks</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Roll Number</th><th>Name</th><th>Marks</th><th>Out of</th></tr></thead>
+              <tbody>
+                ${students.map(s => `
+                  <tr>
+                    <td class="mono">${s.rollNo}</td>
+                    <td class="fw-6">${s.name}</td>
+                    <td><input type="number" id="mark-${s.id}" value="${marksMap[s.id] ?? ''}" min="0" max="${maxMarks}" style="width:90px"></td>
+                    <td style="color:var(--text3)">${maxMarks}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    };
+
+    window.submitMarks = async (examId, studentIds) => {
+      const entries = studentIds
+        .map(id => ({ studentId: id, marks: parseFloat(document.getElementById(`mark-${id}`)?.value) }))
+        .filter(e => !isNaN(e.marks) && e.marks !== null);
+      try {
+        await api('POST', `/api/admin/marks/${examId}`, { entries });
+        toast(`Marks saved for ${entries.length} students`);
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ATTENDANCE
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.attendance = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd"><h2>Attendance</h2></div>
+        <div class="card mb-4">
+          <div class="form-grid">
+            <div class="form-group"><label>Year</label>
+              <select id="att-year">
+                <option value="">All Years</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Date</label>
+              <input type="date" id="att-date" value="${today}">
+            </div>
+            <div class="form-group" style="align-self:flex-end">
+              <button class="btn btn-primary" onclick="loadAttendance()">Load Records</button>
+            </div>
+          </div>
+        </div>
+        <div id="att-table"></div>`;
+    };
+
+    window.loadAttendance = async () => {
+      const year = document.getElementById('att-year').value;
+      const date = document.getElementById('att-date').value;
+      let url = '/api/admin/attendance?';
+      if (year) url += `year=${year}&`;
+      if (date) url += `date=${date}`;
+
+      document.getElementById('att-table').innerHTML = `<div style="color:var(--text3);padding:20px 0">Loading...</div>`;
+      const { attendance } = await api('GET', url);
+
+      if (!attendance.length) {
+        document.getElementById('att-table').innerHTML = `<div class="card" style="text-align:center;color:var(--text3);padding:30px">No attendance records found for this filter.</div>`;
+        return;
+      }
+
+      document.getElementById('att-table').innerHTML = `
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Period</th><th>Subject</th><th>Year</th><th>Staff</th><th>Present</th><th>Absent</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${attendance.map(a => {
+                  const present = JSON.parse(a.presentIds || '[]').length;
+                  const absent = JSON.parse(a.absentIds || '[]').length;
+                  return `<tr>
+                    <td>${a.date}</td>
+                    <td>P${a.period}</td>
+                    <td class="fw-6">${a.subjectName}</td>
+                    <td>Year ${a.year}</td>
+                    <td style="color:var(--text3)">${a.staffName || '—'}</td>
+                    <td class="text-success fw-6">${present}</td>
+                    <td class="text-danger fw-6">${absent}</td>
+                    <td><button class="btn btn-ghost btn-sm" onclick="viewAttModal('${a.id}', ${a.year})">View / Edit</button></td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    };
+
+    // IMPLEMENTED: Was a placeholder before
+    window.viewAttModal = async (attId, year) => {
+      const [attRes, { users: students }] = await Promise.all([
+        api('GET', `/api/admin/attendance?`).then(r => r.attendance?.find(a => a.id === attId) || null),
+        api('GET', `/api/admin/users?role=STUDENT&year=${year}`)
+      ]);
+
+      // Re-fetch the specific record
+      const yearVal = document.getElementById('att-year')?.value || year;
+      const dateVal = document.getElementById('att-date')?.value || '';
+      const allAtt = await api('GET', `/api/admin/attendance?year=${year}&date=${dateVal}`);
+      const rec = allAtt.attendance.find(a => a.id === attId);
+      if (!rec) return toast('Record not found', 'err');
+
+      const presentIds = JSON.parse(rec.presentIds || '[]');
+      const absentIds = JSON.parse(rec.absentIds || '[]');
+
+      const rows = students.map(s => {
+        const isPresent = presentIds.includes(s.id);
+        return `<tr>
+          <td class="mono" style="font-size:12px">${s.rollNo}</td>
+          <td class="fw-6">${s.name}</td>
+          <td>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;color:var(--success)">
+              <input type="radio" name="att-${s.id}" value="present" ${isPresent ? 'checked' : ''}> Present
+            </label>
+          </td>
+          <td>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;color:var(--danger)">
+              <input type="radio" name="att-${s.id}" value="absent" ${!isPresent ? 'checked' : ''}> Absent
+            </label>
+          </td>
+        </tr>`;
+      }).join('');
+
+      modal(`
+        <h3>Attendance — ${rec.subjectName} | ${rec.date} P${rec.period}</h3>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Year ${rec.year} &bull; Staff: ${rec.staffName || 'Unknown'}</div>
+        <div class="table-wrap" style="max-height:360px;overflow-y:auto">
+          <table>
+            <thead><tr><th>Roll No</th><th>Name</th><th colspan="2">Status</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitAttendance('${attId}', ${JSON.stringify(students.map(s => s.id))})">Save Attendance</button>
+        </div>`, true);
+    };
+
+    window.submitAttendance = async (attId, studentIds) => {
+      const presentIds = studentIds.filter(id => {
+        const el = document.querySelector(`input[name="att-${id}"]:checked`);
+        return el && el.value === 'present';
+      });
+      const absentIds = studentIds.filter(id => !presentIds.includes(id));
+      try {
+        await api('PUT', `/api/admin/attendance/${attId}`, { presentIds, absentIds });
+        toast('Attendance updated');
+        closeModal();
+        loadAttendance();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // FEES
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.fees = async () => {
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd"><h2>Fees Management</h2></div>
+        <div class="card mb-4">
+          <div class="form-grid">
+            <div class="form-group"><label>Filter by Year</label>
+              <select id="fees-year" onchange="loadFees()">
+                <option value="">All Years</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="fees-table" class="mb-4"></div>
+        <div class="card">
+          <div class="card-title">Add / Update Fee Entry</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Student Roll Number</label><input id="fee-roll" placeholder="e.g. 410123205040"></div>
+            <div class="form-group"><label>Semester</label><input id="fee-sem" type="number" placeholder="1–8" min="1" max="8"></div>
+            <div class="form-group"><label>Total Fee (Rs.)</label><input id="fee-total" type="number" placeholder="e.g. 45000"></div>
+            <div class="form-group"><label>Paid Amount (Rs.)</label><input id="fee-paid" type="number" placeholder="e.g. 30000"></div>
+            <div class="form-group"><label>Due Date</label><input id="fee-due" type="date"></div>
+            <div class="form-group"><label>Notes</label><input id="fee-notes" placeholder="Optional"></div>
+          </div>
+          <button class="btn btn-primary mt-4" onclick="submitFee()">Save Fee Entry</button>
+        </div>`;
+      loadFees();
+    };
+
+    window.loadFees = async () => {
+      const year = document.getElementById('fees-year')?.value;
+      const url = '/api/admin/fees' + (year ? `?year=${year}` : '');
+      const { fees } = await api('GET', url);
+
+      if (!fees.length) {
+        document.getElementById('fees-table').innerHTML = `<div class="card" style="text-align:center;color:var(--text3);padding:24px">No fee records found.</div>`;
+        return;
+      }
+
+      document.getElementById('fees-table').innerHTML = `
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Roll No</th><th>Name</th><th>Sem</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${fees.map(f => {
+                  const bal = f.totalFee - f.paidAmount;
+                  return `<tr>
+                    <td class="mono">${f.rollNo}</td>
+                    <td class="fw-6">${f.name}</td>
+                    <td>${f.semester}</td>
+                    <td>Rs.${fmt(f.totalFee)}</td>
+                    <td>Rs.${fmt(f.paidAmount)}</td>
+                    <td class="${bal > 0 ? 'text-danger' : 'text-success'} fw-6">Rs.${fmt(bal)}</td>
+                    <td>${bal <= 0 ? badge('ACTIVE', 'green') : badge('INACTIVE', 'red')}</td>
+                    <td><button class="btn btn-ghost btn-sm" onclick="editFeeRow('${f.rollNo}', ${f.semester}, ${f.totalFee}, ${f.paidAmount}, '${f.dueDate || ''}', '${f.notes || ''}')">Edit</button></td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    };
+
+    window.editFeeRow = (rollNo, sem, total, paid, dueDate, notes) => {
+      document.getElementById('fee-roll').value = rollNo;
+      document.getElementById('fee-sem').value = sem;
+      document.getElementById('fee-total').value = total;
+      document.getElementById('fee-paid').value = paid;
+      document.getElementById('fee-due').value = dueDate;
+      document.getElementById('fee-notes').value = notes;
+      document.getElementById('fee-roll').scrollIntoView({ behavior: 'smooth' });
+      toast('Fee row loaded for editing. Modify and click Save.', 'warn');
+    };
+
+    window.submitFee = async () => {
+      const roll = document.getElementById('fee-roll').value.trim();
+      if (!roll) return toast('Roll number is required', 'err');
+
+      try {
+        const { users } = await api('GET', `/api/admin/users?role=STUDENT`);
+        const student = users.find(u => u.rollNo === roll);
+        if (!student) return toast(`Student with roll ${roll} not found`, 'err');
+
+        await api('POST', '/api/admin/fees', {
+          studentId: student.id,
+          semester: parseInt(document.getElementById('fee-sem').value),
+          totalFee: parseFloat(document.getElementById('fee-total').value) || 0,
+          paidAmount: parseFloat(document.getElementById('fee-paid').value) || 0,
+          dueDate: document.getElementById('fee-due').value || null,
+          notes: document.getElementById('fee-notes').value || null
+        });
+        toast('Fee entry saved');
+        loadFees();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // CODING SCORES
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.coding = async () => {
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd"><h2>Coding Scores</h2></div>
+        <div class="card mb-4">
+          <div class="card-title">Enter / Update Score</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Student Roll Number</label><input id="cod-roll" placeholder="Roll number"></div>
+            <div class="form-group"><label>LeetCode Problems Solved</label><input id="cod-lc" type="number" value="0" min="0"></div>
+            <div class="form-group"><label>HackerRank Problems</label><input id="cod-hr" type="number" value="0" min="0"></div>
+            <div class="form-group"><label>Contest Rating</label><input id="cod-cr" type="number" value="0" min="0"></div>
+          </div>
+          <button class="btn btn-primary mt-4" onclick="submitCoding()">Save Score</button>
+        </div>
+        <div class="card">
+          <div class="form-grid mb-4">
+            <div class="form-group"><label>Filter by Year</label>
+              <select id="cod-year" onchange="loadCoding()">
+                <option value="">All Years</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+              </select>
+            </div>
+          </div>
+          <div id="cod-table"></div>
+        </div>`;
+      loadCoding();
+    };
+
+    window.loadCoding = async () => {
+      const year = document.getElementById('cod-year')?.value;
+      const { scores } = await api('GET', '/api/admin/coding' + (year ? `?year=${year}` : ''));
+      document.getElementById('cod-table').innerHTML = !scores.length
+        ? `<div style="text-align:center;color:var(--text3);padding:24px">No coding scores recorded yet.</div>`
+        : `<div class="table-wrap">
+            <table>
+              <thead><tr><th>Roll No</th><th>Name</th><th>LeetCode</th><th>HackerRank</th><th>Contest Rating</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${scores.map(s => `<tr>
+                  <td class="mono">${s.rollNo}</td>
+                  <td class="fw-6">${s.name}</td>
+                  <td class="text-success fw-6">${s.leetcode}</td>
+                  <td class="text-warn fw-6">${s.hackerrank}</td>
+                  <td class="text-accent fw-6">${s.contestRating}</td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="editCodingRow('${s.rollNo}',${s.leetcode},${s.hackerrank},${s.contestRating})">Edit</button></td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+    };
+
+    window.editCodingRow = (rollNo, lc, hr, cr) => {
+      document.getElementById('cod-roll').value = rollNo;
+      document.getElementById('cod-lc').value = lc;
+      document.getElementById('cod-hr').value = hr;
+      document.getElementById('cod-cr').value = cr;
+      document.getElementById('cod-roll').scrollIntoView({ behavior: 'smooth' });
+      toast('Score loaded for editing. Modify and click Save.', 'warn');
+    };
+
+    window.submitCoding = async () => {
+      const roll = document.getElementById('cod-roll').value.trim();
+      if (!roll) return toast('Roll number is required', 'err');
+
+      try {
+        const { users } = await api('GET', `/api/admin/users?role=STUDENT`);
+        const student = users.find(u => u.rollNo === roll);
+        if (!student) return toast(`Student with roll ${roll} not found`, 'err');
+
+        await api('POST', '/api/admin/coding', {
+          studentId: student.id,
+          leetcode: parseInt(document.getElementById('cod-lc').value) || 0,
+          hackerrank: parseInt(document.getElementById('cod-hr').value) || 0,
+          contestRating: parseInt(document.getElementById('cod-cr').value) || 0
+        });
+        toast('Coding score saved');
+        loadCoding();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ANNOUNCEMENTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.announce = async () => {
+      const { announcements } = await api('GET', '/api/admin/announcements');
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd"><h2>Announcements</h2></div>
+        <div class="card mb-4">
+          <div class="card-title">Send Announcement</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Title</label><input id="ann-title" placeholder="Announcement title"></div>
+            <div class="form-group"><label>Target Role</label>
+              <select id="ann-role">
+                <option value="">All Users</option>
+                <option value="STUDENT">Students Only</option>
+                <option value="STAFF">Staff Only</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Target Year</label>
+              <select id="ann-year">
+                <option value="">All Years</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group mt-4">
+            <label>Message</label>
+            <textarea id="ann-body" rows="3" placeholder="Write your announcement..."></textarea>
+          </div>
+          <button class="btn btn-primary mt-4" onclick="sendAnnouncement()">Send to App</button>
+        </div>
+        <div class="card">
+          <div class="card-title">History (last 100)</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Title</th><th>Message</th><th>Target</th><th>Sent By</th></tr></thead>
+              <tbody>
+                ${!announcements.length ? `<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">No announcements yet</td></tr>` :
+                  announcements.map(a => `<tr>
+                    <td style="white-space:nowrap;color:var(--text3)">${dateStr(a.createdAt)}</td>
+                    <td class="fw-6">${a.title}</td>
+                    <td style="max-width:280px;color:var(--text2)">${a.body}</td>
+                    <td>${a.targetRole ? badge(a.targetRole) : badge('ALL', 'gray')} ${a.targetYear ? `Year ${a.targetYear}` : ''}</td>
+                    <td style="color:var(--text3)">${a.senderName || 'Admin'}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    };
+
+    window.sendAnnouncement = async () => {
+      const title = document.getElementById('ann-title').value.trim();
+      const body = document.getElementById('ann-body').value.trim();
+      if (!title || !body) return toast('Title and message are required', 'err');
+      try {
+        await api('POST', '/api/admin/announcements', {
+          title, body,
+          targetRole: document.getElementById('ann-role').value || null,
+          targetYear: parseInt(document.getElementById('ann-year').value) || null
+        });
+        toast('Announcement sent. Reflected on app instantly.');
+        sections.announce();
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // SETTINGS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.settings = async () => {
+      const [settings, dbMode] = await Promise.all([
+        api('GET', '/api/admin/settings'),
+        api('GET', '/api/admin/db-mode')
+      ]);
+      const ttConfig = settings.timetable_config || { periods: 8, breakAfter: [] };
+      const savedHook = localStorage.getItem(RENDER_HOOK_KEY) || '';
+
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd"><h2>Settings</h2></div>
+
+        <!-- DB Status -->
+        <div class="card mb-4">
+          <div class="card-title">Database Connection</div>
+          ${dbMode.mode === 'turso'
+            ? `<div class="info-box">Connected to <strong>Turso Cloud Database</strong>. All changes via this panel are live on the app in real time.<br><br><span style="font-size:11px;color:var(--text3)">${dbMode.url}</span></div>`
+            : `<div class="warn-box">Connected to <strong>Local SQLite</strong> only. Open <code>backend/.env</code> and uncomment the Turso credentials to go live.</div>`}
+        </div>
+
+        <!-- Render Deploy Hook -->
+        <div class="card mb-4">
+          <div class="card-title">Render Deploy Hook</div>
+          <div class="info-box mb-4">Paste your Render Deploy Hook URL here. The "Publish to Live" button uses this to trigger an instant Render redeploy after pushing code. Stored in your browser only — never sent to git.</div>
+          <div class="form-group mb-4">
+            <label>Deploy Hook URL</label>
+            <input id="render-hook" type="text" value="${savedHook}" placeholder="https://api.render.com/deploy/srv-...?key=...">
+          </div>
+          <button class="btn btn-primary" onclick="saveRenderHook()">Save Hook URL</button>
+          ${savedHook ? `<button class="btn btn-ghost" style="margin-left:8px" onclick="clearRenderHook()">Clear</button>` : ''}
+        </div>
+
+        <!-- Timetable Config -->
+        <div class="card mb-4">
+          <div class="card-title">Timetable Configuration</div>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label>Periods Per Day</label>
+              <input type="number" id="s-periods" value="${ttConfig.periods}" min="1" max="12">
+            </div>
+            <div class="form-group">
+              <label>Break After Period (comma-separated)</label>
+              <input type="text" id="s-breaks" value="${(ttConfig.breakAfter || []).join(',')}" placeholder="e.g. 2,5,6">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()">Save Timetable Config</button>
+        </div>
+
+        <!-- Admin Credentials -->
+        <div class="card">
+          <div class="card-title">Admin Credentials</div>
+          <div style="font-size:13px;color:var(--text2);display:flex;flex-direction:column;gap:8px">
+            <div>Admin Roll: <span class="mono fw-6">ADMIN001</span></div>
+            <div>Admin Password: <span class="mono fw-6">2005</span></div>
+            <div>Live App URL: <a href="https://adhi-it.onrender.com" target="_blank" style="color:var(--accent)">https://adhi-it.onrender.com</a></div>
+          </div>
+        </div>`;
+    };
+
+    window.saveRenderHook = () => {
+      const url = document.getElementById('render-hook').value.trim();
+      if (!url) return toast('Paste the deploy hook URL first', 'err');
+      localStorage.setItem(RENDER_HOOK_KEY, url);
+      toast('Render deploy hook saved to browser');
+      sections.settings();
+    };
+
+    window.clearRenderHook = () => {
+      localStorage.removeItem(RENDER_HOOK_KEY);
+      toast('Render hook cleared');
+      sections.settings();
+    };
+
+    window.saveSettings = async () => {
+      const periods = parseInt(document.getElementById('s-periods').value);
+      const breaks = document.getElementById('s-breaks').value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      try {
+        await api('PUT', '/api/admin/settings', { key: 'timetable_config', value: { periods, breakAfter: breaks } });
+        toast('Timetable config saved');
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // PUBLISH TO LIVE
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    window.publishToLive = () => {
+      const hookUrl = localStorage.getItem(RENDER_HOOK_KEY) || '';
+      const ts = new Date().toISOString().slice(0, 16).replace('T', ' ');
+
+      modal(`
+        <h3>Publish to Live</h3>
+        <div class="info-box mb-4">This will push all code changes to GitHub and trigger a Render redeploy. Database data is already live (it goes via Turso directly).</div>
+        <div class="form-group mb-4">
+          <label>Commit Message</label>
+          <input id="pub-msg" value="Admin update ${ts}">
+        </div>
+        ${!hookUrl ? `<div class="warn-box mb-4">No Render deploy hook set. Go to Settings to add it. Git push will still work but Render redeploy must trigger automatically via GitHub.</div>` : ''}
+        <div id="pub-steps">
+          <div class="deploy-step" id="step-git">
+            <div class="step-icon step-pending" id="step-git-icon">1</div>
+            <div>
+              <div class="fw-6" style="font-size:13px">Push code to GitHub</div>
+              <div id="step-git-msg" style="font-size:12px;color:var(--text3);margin-top:2px">Ready</div>
+            </div>
+          </div>
+          <div class="deploy-step" id="step-render">
+            <div class="step-icon step-pending" id="step-render-icon">2</div>
+            <div>
+              <div class="fw-6" style="font-size:13px">Trigger Render redeploy</div>
+              <div id="step-render-msg" style="font-size:12px;color:var(--text3);margin-top:2px">${hookUrl ? 'Ready' : 'No hook URL — Render will auto-deploy from GitHub'}</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="pub-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-publish" id="pub-go" onclick="runPublish()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Publish Now
+          </button>
+        </div>`);
+    };
+
+    window.runPublish = async () => {
+      const msg = document.getElementById('pub-msg').value.trim() || 'Admin update';
+      const hookUrl = localStorage.getItem(RENDER_HOOK_KEY) || '';
+
+      document.getElementById('pub-go').disabled = true;
+      document.getElementById('pub-cancel').disabled = true;
+
+      // Step 1
+      document.getElementById('step-git-icon').className = 'step-icon step-running';
+      document.getElementById('step-git-icon').innerHTML = '<div class="spinner"></div>';
+      document.getElementById('step-git-msg').textContent = 'Running git push...';
+
+      try {
+        const res = await api('POST', '/api/admin/deploy', { message: msg, renderHookUrl: hookUrl || undefined });
+
+        document.getElementById('step-git-icon').className = 'step-icon step-done';
+        document.getElementById('step-git-icon').textContent = '✓';
+        document.getElementById('step-git-msg').textContent = res.gitMsg || 'Done';
+
+        // Step 2
+        document.getElementById('step-render-icon').className = 'step-icon step-done';
+        document.getElementById('step-render-icon').textContent = hookUrl ? '✓' : '—';
+        document.getElementById('step-render-msg').textContent = res.renderMsg || 'Triggered';
+
+        document.getElementById('pub-cancel').disabled = false;
+        document.getElementById('pub-cancel').textContent = 'Close';
+        toast('Published successfully');
+      } catch (e) {
+        document.getElementById('step-git-icon').className = 'step-icon step-error';
+        document.getElementById('step-git-icon').textContent = '!';
+        document.getElementById('step-git-msg').textContent = e.message;
+        document.getElementById('pub-go').disabled = false;
+        document.getElementById('pub-cancel').disabled = false;
+        toast(e.message, 'err');
+      }
+    };
+
+    // ── Init ──────────────────────────────────────────────────────────────────────
+
+    loadDbMode();
+    showSection('dashboard');
+  </script>
+
 </body>
 </html>

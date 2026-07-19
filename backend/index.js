@@ -18,7 +18,11 @@ async function startServer() {
   global.io = io;
   app.set('io', io);
 
-  app.use(cors());
+  // Allow requests from file:// (null origin) for the local admin dashboard
+  app.use(cors({
+    origin: (origin, cb) => cb(null, true),
+    credentials: true
+  }));
   app.use(express.json({ limit: '10mb' }));
 
   // ─── API Routes ────────────────────────────────────────────────────────────────
@@ -56,11 +60,11 @@ async function startServer() {
     console.log('');
     console.log('  ╔══════════════════════════════════════════════════════════╗');
     console.log('  ║   Adhi-IT — Campus OS Backend                           ║');
-    console.log(`  ║   Running at http://localhost:${PORT}                      ║`);
+    console.log(`  ║   API running at http://localhost:${PORT}                    ║`);
     console.log('  ║                                                          ║');
-    console.log(`  ║   Admin Dashboard: http://localhost:${PORT}/admin           ║`);
+    console.log('  ║   Admin Dashboard: open the file below in browser       ║');
+    console.log('  ║   backend/public/admin/index.html                       ║');
     console.log('  ║   Admin Roll: ADMIN001  Password: 2005                  ║');
-    console.log('  ║   Demo Student: 410123205040  Password: 5040            ║');
     console.log('  ╚══════════════════════════════════════════════════════════╝');
     console.log('');
   });

@@ -1,5 +1,5 @@
 const express = require('express');
-const { db, uuidv4 } = require('../db');
+const { db, uuidv4, hashPassword } = require('../db');
 const { requireAuth, requireHOD, requireInchargeOrHOD, requireStaffOrHOD } = require('../middleware/auth');
 const router = express.Router();
 
@@ -30,24 +30,25 @@ router.get('/students', requireAuth, requireInchargeOrHOD, async (req, res) => {
 
 router.post('/students', requireAuth, requireHOD, async (req, res) => {
   try {
-    const { name, phone, year, rollNo } = req.body;
-    if (!name || !phone || !year) return res.status(400).json({ error: 'name, phone, year required' });
-    const existing = (await db.execute({ sql: 'SELECT id FROM users WHERE phone=?', args: [phone] })).rows[0];
-    if (existing) return res.status(409).json({ error: 'Phone already registered' });
+    const { name, rollNo, year } = req.body;
+    if (!name || !rollNo || !year) return res.status(400).json({ error: 'name, rollNo, year required' });
+    const existing = (await db.execute({ sql: 'SELECT id FROM users WHERE rollNo=?', args: [rollNo] })).rows[0];
+    if (existing) return res.status(409).json({ error: 'Roll number already registered' });
     const id = uuidv4();
-    await db.execute({ sql: 'INSERT INTO users (id,name,phone,role,year,rollNo) VALUES (?,?,?,?,?,?)', args: [id, name, phone, 'STUDENT', year, rollNo || null] });
+    const defaultPassword = rollNo.toString().slice(-4);
+    await db.execute({ sql: 'INSERT INTO users (id,name,rollNo,password,role,year) VALUES (?,?,?,?,?,?)', args: [id, name, rollNo, hashPassword(defaultPassword), 'STUDENT', parseInt(year)] });
     res.json({ success: true, id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 router.put('/students/:id', requireAuth, requireInchargeOrHOD, async (req, res) => {
   try {
-    const { name, phone, year, rollNo } = req.body;
+    const { name, year, rollNo } = req.body;
     if (req.user.role === 'STAFF') {
       const student = (await db.execute({ sql: 'SELECT year FROM users WHERE id=?', args: [req.params.id] })).rows[0];
       if (!student || student.year !== req.user.inchargeYear) return res.status(403).json({ error: 'Not authorized' });
     }
-    await db.execute({ sql: 'UPDATE users SET name=?,phone=?,year=?,rollNo=? WHERE id=?', args: [name, phone, year, rollNo, req.params.id] });
+    await db.execute({ sql: 'UPDATE users SET name=?,year=?,rollNo=? WHERE id=?', args: [name, year, rollNo, req.params.id] });
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -68,13 +69,14 @@ router.post('/students/bulk-upload', requireAuth, requireHOD, async (req, res) =
     
     for (let i = 0; i < records.length; i++) {
       const r = records[i];
-      if (!r.name || !r.phone || !r.year) { errors.push(`Row ${i + 1}: name, phone, year required`); continue; }
-      const existing = (await db.execute({ sql: 'SELECT id FROM users WHERE phone=?', args: [r.phone] })).rows[0];
+      if (!r.name || !r.rollNo || !r.year) { errors.push(`Row ${i + 1}: name, rollNo, year required`); continue; }
+      const existing = (await db.execute({ sql: 'SELECT id FROM users WHERE rollNo=?', args: [r.rollNo] })).rows[0];
       if (existing) {
-        await db.execute({ sql: 'UPDATE users SET name=?,year=?,rollNo=?,isActive=1 WHERE phone=?', args: [r.name, r.year, r.rollNo || null, r.phone] });
+        await db.execute({ sql: 'UPDATE users SET name=?,year=?,isActive=1 WHERE rollNo=?', args: [r.name, parseInt(r.year), r.rollNo] });
         updated++;
       } else {
-        await db.execute({ sql: 'INSERT INTO users (id,name,phone,role,year,rollNo) VALUES (?,?,?,?,?,?)', args: [uuidv4(), r.name, r.phone, 'STUDENT', parseInt(r.year), r.rollNo || null] });
+        const defaultPassword = r.rollNo.toString().slice(-4);
+        await db.execute({ sql: 'INSERT INTO users (id,name,rollNo,password,role,year) VALUES (?,?,?,?,?,?)', args: [uuidv4(), r.name, r.rollNo, hashPassword(defaultPassword), 'STUDENT', parseInt(r.year)] });
         added++;
       }
     }
@@ -84,7 +86,7 @@ router.post('/students/bulk-upload', requireAuth, requireHOD, async (req, res) =
 });
 
 router.get('/students/download-template', requireAuth, requireHOD, (req, res) => {
-  const csv = 'name,phone,year,rollNo\nStudent Name,9876543210,4,IT20001\n';
+  const csv = 'name,rollNo,year\nStudent Name,410123205040,2\n';
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="student-template.csv"');
   res.send(csv);
@@ -94,8 +96,8 @@ router.get('/students/download/:year', requireAuth, requireInchargeOrHOD, async 
   try {
     const year = parseInt(req.params.year);
     if (req.user.role === 'STAFF' && req.user.inchargeYear !== year) return res.status(403).json({ error: 'Not authorized' });
-    const students = (await db.execute({ sql: 'SELECT name,phone,year,rollNo FROM users WHERE role=? AND year=? AND isActive=1 ORDER BY rollNo', args: ['STUDENT', year] })).rows;
-    const csv = ['name,phone,year,rollNo', ...students.map(s => `${s.name},${s.phone},${s.year},${s.rollNo || ''}`)].join('\n');
+    const students = (await db.execute({ sql: 'SELECT name,rollNo,year FROM users WHERE role=? AND year=? AND isActive=1 ORDER BY rollNo', args: ['STUDENT', year] })).rows;
+    const csv = ['name,rollNo,year', ...students.map(s => `${s.name},${s.rollNo || ''},${s.year}`)].join('\n');
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="students-year${year}.csv"`);
     res.send(csv);
@@ -111,12 +113,13 @@ router.get('/staff', requireAuth, requireHOD, async (req, res) => {
 
 router.post('/staff', requireAuth, requireHOD, async (req, res) => {
   try {
-    const { name, phone } = req.body;
-    if (!name || !phone) return res.status(400).json({ error: 'name, phone required' });
-    const existing = (await db.execute({ sql: 'SELECT id FROM users WHERE phone=?', args: [phone] })).rows[0];
-    if (existing) return res.status(409).json({ error: 'Phone already registered' });
+    const { name, rollNo } = req.body;
+    if (!name || !rollNo) return res.status(400).json({ error: 'name, rollNo required' });
+    const existing = (await db.execute({ sql: 'SELECT id FROM users WHERE rollNo=?', args: [rollNo] })).rows[0];
+    if (existing) return res.status(409).json({ error: 'Roll number already registered' });
     const id = uuidv4();
-    await db.execute({ sql: 'INSERT INTO users (id,name,phone,role) VALUES (?,?,?,?)', args: [id, name, phone, 'STAFF'] });
+    const defaultPassword = rollNo.toString().slice(-4);
+    await db.execute({ sql: 'INSERT INTO users (id,name,rollNo,password,role) VALUES (?,?,?,?,?)', args: [id, name, rollNo, hashPassword(defaultPassword), 'STAFF'] });
     res.json({ success: true, id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -139,7 +142,7 @@ router.put('/staff/:id/demote', requireAuth, requireHOD, async (req, res) => {
 
 router.get('/stats/overview', requireAuth, requireHOD, async (req, res) => {
   try {
-    const years = [2, 3, 4];
+    const years = [1, 2, 3, 4];
     const statsPromises = years.map(async y => ({
       year: y,
       students: (await db.execute({ sql: "SELECT COUNT(*) as c FROM users WHERE role='STUDENT' AND year=? AND isActive=1", args: [y] })).rows[0].c,

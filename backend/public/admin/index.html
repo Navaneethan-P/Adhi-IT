@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adhi-IT Admin — CampusOS Control Panel</title>
+  <title>Adhi-IT Admin Panel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -540,7 +540,7 @@
       </div>
       <div class="sidebar-logo-text">
         <h1>Adhi-IT Admin</h1>
-        <p>CampusOS Control Panel</p>
+        <p>IT Department Admin Panel</p>
       </div>
     </div>
 
@@ -596,6 +596,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
         Announcements
       </button>
+      <button class="nav-item" onclick="showSection('defaulters')" id="nav-defaulters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Defaulters
+      </button>
 
       <div class="nav-section">System</div>
       <button class="nav-item" onclick="showSection('settings')" id="nav-settings">
@@ -644,6 +648,28 @@
     const RENDER_HOOK_KEY = 'campusos_render_hook';
     const sections = {};
     let currentSection = 'dashboard';
+
+    // Academic year helpers
+    // Current academic end year (e.g. 2027 for session 2026-27)
+    const ACY = (() => {
+      const s = parseInt(localStorage.getItem('academic_year') || '0');
+      if (s > 2000) return s;
+      const now = new Date();
+      // If month >= June new session starts
+      return now.getMonth() >= 5 ? now.getFullYear() + 1 : now.getFullYear();
+    })();
+    // DB year number -> display label
+    function getBatchLabel(yearNum) {
+      if (yearNum === 5 || yearNum === 'PASTOUT') return 'Passed Out';
+      const dur = 4; // 4-year B.E. program
+      const endYear = ACY - (4 - yearNum);
+      return `Year ${yearNum} (${endYear - dur} - ${endYear})`;
+    }
+    const YEAR_OPTS = [1, 2, 3, 4, 'PASTOUT'];
+    function yearSelect(id, includeAll = true, selected = '') {
+      const all = includeAll ? `<option value="">All Years</option>` : '';
+      return `<select id="${id}">${all}${YEAR_OPTS.map(y => `<option value="${y}" ${selected == y ? 'selected' : ''}>${getBatchLabel(y)}</option>`).join('')}</select>`;
+    }
 
     // ── Utilities ────────────────────────────────────────────────────────────────
 
@@ -716,7 +742,8 @@
         dashboard: 'Dashboard', students: 'Students', staff: 'Staff & HOD',
         subjects: 'Subjects', timetable: 'Timetable', exams: 'Exams',
         marks: 'Marks Entry', attendance: 'Attendance', fees: 'Fees Management',
-        coding: 'Coding Scores', announce: 'Announcements', settings: 'Settings'
+        coding: 'Coding Scores', announce: 'Announcements', settings: 'Settings',
+        defaulters: 'Defaulters Report'
       };
       document.getElementById('topbar-title').textContent = titles[name] || name;
       const el = document.getElementById('content');
@@ -833,9 +860,7 @@
     function renderStudentsView(users) {
       const byYear = {};
       users.forEach(u => { (byYear[u.year] = byYear[u.year] || []).push(u); });
-      const years = Object.keys(byYear).sort();
-
-      const firstYear = years[0];
+      const years = Object.keys(byYear).sort((a,b) => parseInt(a)-parseInt(b));
 
       document.getElementById('content').innerHTML = `
         <div class="section-hd">
@@ -847,7 +872,7 @@
           <input type="text" placeholder="Search by name or roll number..." oninput="filterStudents(this.value)" id="stu-search">
         </div>
         ${years.length === 0 ? '<div class="card" style="text-align:center;color:var(--text3);padding:40px">No students added yet.</div>' : `
-        <div class="tabs">${years.map((y, i) => `<button class="tab ${i === 0 ? 'active' : ''}" onclick="switchStudentYear(${y})" id="stab-${y}">Year ${y} &nbsp;<span style="font-weight:500;opacity:.75">${byYear[y].length}</span></button>`).join('')}</div>
+        <div class="tabs">${years.map((y, i) => `<button class="tab ${i === 0 ? 'active' : ''}" onclick="switchStudentYear(${y})" id="stab-${y}">${getBatchLabel(parseInt(y) === 5 ? 'PASTOUT' : parseInt(y))} &nbsp;<span style="font-weight:500;opacity:.75">${byYear[y].length}</span></button>`).join('')}</div>
         ${years.map((y, i) => `
           <div id="stu-year-${y}" ${i > 0 ? 'class="hidden"' : ''}>
             <div class="card">
@@ -978,8 +1003,8 @@
         <div class="form-grid">
           <div class="form-group"><label>Full Name</label><input id="u-name" placeholder="e.g. Arjun Kumar"></div>
           <div class="form-group"><label>Roll Number</label><input id="u-roll" placeholder="e.g. 410123205040"></div>
-          ${isStudent ? `<div class="form-group"><label>Year</label><select id="u-year"><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select></div>` : ''}
-          ${isHOD ? `<div class="form-group"><label>Incharge Year</label><select id="u-incharge"><option value="">None</option><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option></select></div>` : ''}
+          ${isStudent ? `<div class="form-group"><label>Year / Batch</label><select id="u-year">${YEAR_OPTS.map(y => `<option value="${y === 'PASTOUT' ? 5 : y}">${getBatchLabel(y)}</option>`).join('')}</select></div>` : ''}
+          ${isHOD ? `<div class="form-group"><label>Incharge Year</label><select id="u-incharge"><option value="">None</option>${[1,2,3,4].map(y => `<option value="${y}">${getBatchLabel(y)}</option>`).join('')}</select></div>` : ''}
         </div>
         <div class="info-box mt-4">Default password will be the <strong>last 4 digits of the roll number</strong>. The user changes it from the app after first login.</div>
         <div class="modal-actions">
@@ -1022,16 +1047,16 @@
               ${['STUDENT', 'STAFF', 'HOD', 'ADMIN'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r}</option>`).join('')}
             </select>
           </div>
-          <div class="form-group"><label>Year</label>
+          <div class="form-group"><label>Year / Batch</label>
             <select id="eu-year">
               <option value="">—</option>
-              ${[2, 3, 4].map(y => `<option value="${y}" ${u.year == y ? 'selected' : ''}>Year ${y}</option>`).join('')}
+              ${YEAR_OPTS.map(y => `<option value="${y === 'PASTOUT' ? 5 : y}" ${u.year == (y === 'PASTOUT' ? 5 : y) ? 'selected' : ''}>${getBatchLabel(y)}</option>`).join('')}
             </select>
           </div>
           <div class="form-group"><label>Incharge Year</label>
             <select id="eu-incharge">
               <option value="">None</option>
-              ${[2, 3, 4].map(y => `<option value="${y}" ${u.inchargeYear == y ? 'selected' : ''}>Year ${y}</option>`).join('')}
+              ${[1,2,3,4].map(y => `<option value="${y}" ${u.inchargeYear == y ? 'selected' : ''}>${getBatchLabel(y)}</option>`).join('')}
             </select>
           </div>
           <div class="form-group"><label>Account Status</label>
@@ -1146,9 +1171,9 @@
         <div class="form-grid">
           <div class="form-group"><label>Subject Name</label><input id="sm-name" value="${s.name || ''}" placeholder="e.g. Data Structures"></div>
           <div class="form-group"><label>Subject Code</label><input id="sm-code" value="${s.code || ''}" placeholder="e.g. CS3301"></div>
-          <div class="form-group"><label>Year</label>
+          <div class="form-group"><label>Year / Batch</label>
             <select id="sm-year">
-              ${[2, 3, 4].map(y => `<option value="${y}" ${s.year == y ? 'selected' : ''}>Year ${y}</option>`).join('')}
+              ${[1,2,3,4].map(y => `<option value="${y}" ${s.year == y ? 'selected' : ''}>${getBatchLabel(y)}</option>`).join('')}
             </select>
           </div>
           <div class="form-group"><label>Semester</label><input id="sm-sem" type="number" value="${s.semester || 1}" min="1" max="8"></div>
@@ -1276,9 +1301,7 @@
               <label>Select Year</label>
               <select id="tt-year-sel" onchange="loadTTEditor()">
                 <option value="">— Select Year —</option>
-                <option value="2">Year 2</option>
-                <option value="3">Year 3</option>
-                <option value="4">Year 4</option>
+                ${[1,2,3,4].map(y => `<option value="${y}">${getBatchLabel(y)}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -1412,9 +1435,9 @@
             </select>
           </div>
           <div class="form-group"><label>Subject</label><select id="em-subject">${subOpts}</select></div>
-          <div class="form-group"><label>Year</label>
+          <div class="form-group"><label>Year / Batch</label>
             <select id="em-year">
-              ${[2, 3, 4].map(y => `<option value="${y}" ${e.year == y ? 'selected' : ''}>Year ${y}</option>`).join('')}
+              ${[1,2,3,4].map(y => `<option value="${y}" ${e.year == y ? 'selected' : ''}>${getBatchLabel(y)}</option>`).join('')}
             </select>
           </div>
           <div class="form-group"><label>Exam Date</label><input id="em-date" type="date" value="${e.examDate || ''}"></div>
@@ -1580,12 +1603,7 @@
         <div class="card mb-4">
           <div class="form-grid">
             <div class="form-group"><label>Year</label>
-              <select id="att-year">
-                <option value="">All Years</option>
-                <option value="2">Year 2</option>
-                <option value="3">Year 3</option>
-                <option value="4">Year 4</option>
-              </select>
+              ${yearSelect('att-year')}
             </div>
             <div class="form-group"><label>Date</label>
               <input type="date" id="att-date" value="${today}">
@@ -1630,7 +1648,12 @@
                     <td style="color:var(--text3)">${a.staffName || '—'}</td>
                     <td class="text-success fw-6">${present}</td>
                     <td class="text-danger fw-6">${absent}</td>
-                    <td><button class="btn btn-ghost btn-sm" onclick="viewAttModal('${a.id}', ${a.year})">View / Edit</button></td>
+                    <td>
+                      <div class="flex gap-2">
+                        <button class="btn btn-ghost btn-sm" onclick="viewAttModal('${a.id}', ${a.year})">View / Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteAttendance('${a.id}')">Delete</button>
+                      </div>
+                    </td>
                   </tr>`;
                 }).join('')}
               </tbody>
@@ -1703,6 +1726,16 @@
       } catch (e) { toast(e.message, 'err'); }
     };
 
+    window.deleteAttendance = (id) => {
+      confirmModal('Delete this attendance record?', async () => {
+        try {
+          await api('DELETE', `/api/admin/attendance/${id}`);
+          toast('Attendance deleted');
+          loadAttendance();
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    };
+
     // ══════════════════════════════════════════════════════════════════════════════
     // FEES
     // ══════════════════════════════════════════════════════════════════════════════
@@ -1715,9 +1748,7 @@
             <div class="form-group"><label>Filter by Year</label>
               <select id="fees-year" onchange="loadFees()">
                 <option value="">All Years</option>
-                <option value="2">Year 2</option>
-                <option value="3">Year 3</option>
-                <option value="4">Year 4</option>
+                ${[1,2,3,4].map(y => `<option value="${y}">${getBatchLabel(y)}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -1828,9 +1859,7 @@
             <div class="form-group"><label>Filter by Year</label>
               <select id="cod-year" onchange="loadCoding()">
                 <option value="">All Years</option>
-                <option value="2">Year 2</option>
-                <option value="3">Year 3</option>
-                <option value="4">Year 4</option>
+                ${[1,2,3,4].map(y => `<option value="${y}">${getBatchLabel(y)}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -1912,9 +1941,7 @@
             <div class="form-group"><label>Target Year</label>
               <select id="ann-year">
                 <option value="">All Years</option>
-                <option value="2">Year 2</option>
-                <option value="3">Year 3</option>
-                <option value="4">Year 4</option>
+                ${[1,2,3,4].map(y => `<option value="${y}">${getBatchLabel(y)}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -1957,6 +1984,83 @@
         toast('Announcement sent. Reflected on app instantly.');
         sections.announce();
       } catch (e) { toast(e.message, 'err'); }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // DEFAULTERS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sections.defaulters = async () => {
+      document.getElementById('content').innerHTML = `
+        <div class="section-hd">
+          <h2>Defaulters Report</h2>
+          <div class="flex gap-2">
+            <select id="def-year" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px">
+              <option value="">All Years</option>
+              ${[1,2,3,4].map(y => `<option value="${y}">${getBatchLabel(y)}</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" onclick="loadDefaulters()">Load</button>
+          </div>
+        </div>
+        <div id="def-table"></div>`;
+      loadDefaulters();
+    };
+
+    window.loadDefaulters = async () => {
+      const year = document.getElementById('def-year')?.value;
+      document.getElementById('def-table').innerHTML = `<div style="color:var(--text3);padding:20px 0">Loading...</div>`;
+      const { defaulters } = await api('GET', '/api/admin/defaulters' + (year ? `?year=${year}` : ''));
+      if (!defaulters.length) {
+        document.getElementById('def-table').innerHTML = `<div class="card" style="text-align:center;color:var(--success);padding:30px;font-weight:600">No defaulters found.</div>`;
+        return;
+      }
+      document.getElementById('def-table').innerHTML = `
+        <div class="card">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">${defaulters.length} student(s) flagged</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Name</th><th>Roll No</th><th>Year</th><th>Attendance</th><th>Fees</th><th>Action</th></tr></thead>
+              <tbody>
+                ${defaulters.map((d, i) => `<tr>
+                  <td style="color:var(--text4)">${i+1}</td>
+                  <td class="fw-6">${d.name}</td>
+                  <td class="mono">${d.rollNo}</td>
+                  <td>${getBatchLabel(d.year)}</td>
+                  <td>${d.hasAttendanceIssue ? '<span class="badge badge-red">Below 75%</span>' : '<span class="badge badge-green">OK</span>'}</td>
+                  <td>${d.hasFeeIssue ? '<span class="badge badge-red">Pending</span>' : '<span class="badge badge-green">Clear</span>'}</td>
+                  <td><button class="btn btn-warning btn-sm" onclick="notifyDefaulter('${d.id}','${d.name}')">Notify</button></td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:14px">
+            <button class="btn btn-danger" onclick="notifyAllDefaulters(${JSON.stringify(defaulters.map(d=>d.name))})">Notify All (${defaulters.length})</button>
+          </div>
+        </div>`;
+    };
+
+    window.notifyDefaulter = async (id, name) => {
+      try {
+        await api('POST', '/api/admin/announcements', {
+          title: 'Action Required',
+          body: `Dear ${name}, you have been flagged as a defaulter. Please contact the IT Department immediately regarding attendance or fee dues.`,
+          targetRole: 'STUDENT'
+        });
+        toast(`Notification sent to ${name}`);
+      } catch (e) { toast(e.message, 'err'); }
+    };
+
+    window.notifyAllDefaulters = async (names) => {
+      confirmModal(`Send a notification to all ${names.length} defaulters?`, async () => {
+        try {
+          await api('POST', '/api/admin/announcements', {
+            title: 'Defaulter Notice',
+            body: 'You have been flagged as a defaulter. Please report to the IT Department immediately regarding attendance shortfall or pending fee dues.',
+            targetRole: 'STUDENT'
+          });
+          toast(`Notification sent to ${names.length} defaulters`);
+        } catch (e) { toast(e.message, 'err'); }
+      });
     };
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -2010,6 +2114,27 @@
           <button class="btn btn-primary" onclick="saveSettings()">Save Timetable Config</button>
         </div>
 
+        <!-- Academic Year Config -->
+        <div class="card mb-4">
+          <div class="card-title">Academic Year</div>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label>Current Academic End Year (e.g. 2027 for session 2026-27)</label>
+              <input type="number" id="s-acy" value="${parseInt(localStorage.getItem('academic_year') || ACY)}" min="2020" max="2040">
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Batch labels across the panel are computed from this. Current: Year 4 = ${getBatchLabel(4)}</div>
+          <button class="btn btn-primary" onclick="saveAcademicYear()">Save Academic Year</button>
+        </div>
+
+        <!-- Batch Promotion -->
+        <div class="card mb-4">
+          <div class="card-title">Year-End Batch Promotion</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Promotes all students to the next year at the end of the academic year. Year 1 → 2, Year 2 → 3, Year 3 → 4, Year 4 → Passed Out. This action cannot be undone.</div>
+          <div class="warn-box mb-4">Run this only once per academic year, after all exams are complete.</div>
+          <button class="btn btn-danger" onclick="promoteStudents()">Promote All Students</button>
+        </div>
+
         <!-- Admin Credentials -->
         <div class="card">
           <div class="card-title">Admin Credentials</div>
@@ -2042,6 +2167,23 @@
         await api('PUT', '/api/admin/settings', { key: 'timetable_config', value: { periods, breakAfter: breaks } });
         toast('Timetable config saved');
       } catch (e) { toast(e.message, 'err'); }
+    };
+
+    window.saveAcademicYear = () => {
+      const val = parseInt(document.getElementById('s-acy').value);
+      if (!val || val < 2020) return toast('Enter a valid year (e.g. 2027)', 'err');
+      localStorage.setItem('academic_year', val);
+      toast('Academic year saved. Reload the page to apply new batch labels.');
+    };
+
+    window.promoteStudents = () => {
+      confirmModal('This will promote ALL students to the next year. Year 4 students will become Passed Out. This cannot be undone. Proceed?', async () => {
+        try {
+          const r = await api('POST', '/api/admin/promote-students', {});
+          toast(`Batch promotion complete. ${r.promoted} active students updated.`);
+          sections.settings();
+        } catch (e) { toast(e.message, 'err'); }
+      });
     };
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -2126,6 +2268,35 @@
 
     loadDbMode();
     showSection('dashboard');
+
+    // Notification permission prompt
+    (function askNotifPermission() {
+      if (!('Notification' in window)) return;
+      if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+      // Small delay to not block initial render
+      setTimeout(() => {
+        const bg = document.createElement('div');
+        bg.className = 'modal-bg';
+        bg.innerHTML = `
+          <div class="modal" style="max-width:420px">
+            <h3 style="font-size:15px;margin-bottom:10px">Enable Notifications</h3>
+            <p style="color:var(--text2);font-size:13px;margin-bottom:18px">Allow browser notifications to receive real-time alerts for attendance, announcements, and system events. Chrome may block them if you skip this step.</p>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="notif-skip">Skip</button>
+              <button class="btn btn-primary" id="notif-allow">Enable Notifications</button>
+            </div>
+          </div>`;
+        document.getElementById('modal-container').appendChild(bg);
+        document.getElementById('notif-skip').onclick = () => bg.remove();
+        document.getElementById('notif-allow').onclick = () => {
+          Notification.requestPermission().then(p => {
+            bg.remove();
+            if (p === 'granted') toast('Notifications enabled');
+            else toast('Notifications blocked. Check browser site settings.', 'warn');
+          });
+        };
+      }, 1500);
+    })();
   </script>
 
 </body>

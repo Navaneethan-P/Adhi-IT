@@ -12,7 +12,11 @@ router.get('/users', async (req, res) => {
     const params = [];
     const conditions = [];
     if (role) { conditions.push('role = ?'); params.push(role); }
-    if (year) { conditions.push('year = ?'); params.push(parseInt(year)); }
+    if (year === 'PASTOUT') {
+      conditions.push('year = 5');
+    } else if (year) {
+      conditions.push('year = ?'); params.push(parseInt(year));
+    }
     if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY role, year, name';
     
@@ -250,7 +254,10 @@ router.get('/attendance', async (req, res) => {
     const { year, date, subjectId } = req.query;
     let query = `SELECT a.*, s.name as subjectName, u.name as staffName FROM attendance a JOIN subjects s ON a.subjectId=s.id LEFT JOIN users u ON a.staffId=u.id WHERE 1=1`;
     const params = [];
-    if (year) { query += ' AND a.year=?'; params.push(parseInt(year)); }
+    if (year) {
+      const yearNum = year === 'PASTOUT' ? 5 : parseInt(year);
+      if (!isNaN(yearNum)) { query += ' AND a.year=?'; params.push(yearNum); }
+    }
     if (date) { query += ' AND a.date=?'; params.push(date); }
     if (subjectId) { query += ' AND a.subjectId=?'; params.push(subjectId); }
     query += ' ORDER BY a.date DESC, a.period';
@@ -267,6 +274,13 @@ router.put('/attendance/:id', async (req, res) => {
       sql: 'UPDATE attendance SET presentIds=?, absentIds=? WHERE id=?',
       args: [JSON.stringify(presentIds || []), JSON.stringify(absentIds || []), req.params.id]
     });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/attendance/:id', async (req, res) => {
+  try {
+    await db.execute({ sql: 'DELETE FROM attendance WHERE id=?', args: [req.params.id] });
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -376,6 +390,61 @@ router.put('/settings', async (req, res) => {
       args: [key, JSON.stringify(value)]
     });
     res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Promote all students: year 1->2, 2->3, 3->4, 4->5 (PASTOUT)
+router.post('/promote-students', async (req, res) => {
+  try {
+    await db.execute({ sql: "UPDATE users SET year=5 WHERE role='STUDENT' AND year=4", args: [] });
+    await db.execute({ sql: "UPDATE users SET year=4 WHERE role='STUDENT' AND year=3", args: [] });
+    await db.execute({ sql: "UPDATE users SET year=3 WHERE role='STUDENT' AND year=2", args: [] });
+    await db.execute({ sql: "UPDATE users SET year=2 WHERE role='STUDENT' AND year=1", args: [] });
+    const r = await db.execute({ sql: "SELECT COUNT(*) as c FROM users WHERE role='STUDENT' AND isActive=1", args: [] });
+    res.json({ success: true, promoted: r.rows[0].c });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Defaulters: attendance < 75% OR pending fees
+router.get('/defaulters', async (req, res) => {
+  try {
+    const { year } = req.query;
+    let yearCond = year && year !== '' ? `AND s.year = ${parseInt(year)}` : '';
+    // Students with any subject attendance < 75%
+    const attResult = await db.execute({ sql: `
+      SELECT u.id, u.name, u.rollNo, u.year,
+        COUNT(a.id) as totalClasses,
+        SUM(CASE WHEN INSTR(a.presentIds, '"'||u.id||'"') > 0 THEN 1 ELSE 0 END) as present
+      FROM users u
+      JOIN subjects s ON s.year = u.year AND s.isActive = 1
+      LEFT JOIN attendance a ON a.subjectId = s.id
+      WHERE u.role = 'STUDENT' AND u.isActive = 1 ${yearCond.replace('s.year', 'u.year').replace('AND s.year', 'AND u.year')}
+      GROUP BY u.id, s.id
+      HAVING totalClasses > 0 AND (CAST(present AS REAL) / totalClasses) < 0.75
+    `, args: [] });
+    const attStudentIds = [...new Set(attResult.rows.map(r => r.id))];
+
+    // Students with pending fees
+    const feeResult = await db.execute({ sql: `
+      SELECT DISTINCT u.id, u.name, u.rollNo, u.year
+      FROM users u
+      JOIN fee_payments f ON f.studentId = u.id
+      WHERE u.role = 'STUDENT' AND u.isActive = 1 AND f.totalFee > f.paidAmount
+    `, args: [] });
+    const feeStudentIds = feeResult.rows.map(r => r.id);
+
+    const allIds = [...new Set([...attStudentIds, ...feeStudentIds])];
+    if (!allIds.length) return res.json({ defaulters: [] });
+
+    const placeholders = allIds.map(() => '?').join(',');
+    const usersRes = await db.execute({ sql: `SELECT id, name, rollNo, year FROM users WHERE id IN (${placeholders})`, args: allIds });
+
+    const defaulters = usersRes.rows.map(u => ({
+      ...u,
+      hasAttendanceIssue: attStudentIds.includes(u.id),
+      hasFeeIssue: feeStudentIds.includes(u.id)
+    }));
+    res.json({ defaulters });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -40,7 +40,9 @@ async function startServer() {
 
   // ─── Serve PC Admin Dashboard ─────────────────────────────────────────────────
   const adminPath = path.join(__dirname, 'public/admin');
-  app.use('/admin', express.static(adminPath));
+  app.use('/admin', express.static(adminPath, {
+    setHeaders: (res) => { res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private'); }
+  }));
 
   // ─── Serve React Mobile App ───────────────────────────────────────────────────
   const distPath = path.join(__dirname, '../app/dist');

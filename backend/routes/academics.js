@@ -7,10 +7,13 @@ router.get('/subjects/:year', requireAuth, async (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const result = await db.execute({ sql: `
-      SELECT s.*, u.name as staffName
+      SELECT s.*,
+        GROUP_CONCAT(u.name, ', ') as staffName
       FROM subjects s
-      LEFT JOIN users u ON s.staffId = u.id
+      LEFT JOIN subject_staff ss ON ss.subjectId = s.id
+      LEFT JOIN users u ON ss.staffId = u.id
       WHERE s.year = ?
+      GROUP BY s.id
       ORDER BY s.code
     `, args: [year] });
     res.json({ subjects: result.rows });
@@ -20,9 +23,12 @@ router.get('/subjects/:year', requireAuth, async (req, res) => {
 router.get('/subjects', requireAuth, async (req, res) => {
   try {
     const result = await db.execute(`
-      SELECT s.*, u.name as staffName
+      SELECT s.*,
+        GROUP_CONCAT(u.name, ', ') as staffName
       FROM subjects s
-      LEFT JOIN users u ON s.staffId = u.id
+      LEFT JOIN subject_staff ss ON ss.subjectId = s.id
+      LEFT JOIN users u ON ss.staffId = u.id
+      GROUP BY s.id
       ORDER BY s.year, s.code
     `);
     res.json({ subjects: result.rows });
@@ -31,18 +37,31 @@ router.get('/subjects', requireAuth, async (req, res) => {
 
 router.post('/subjects', requireAuth, requireHOD, async (req, res) => {
   try {
-    const { name, code, year, semester, credits, staffId } = req.body;
+    const { name, code, year, semester, credits, hoursPerWeek, staffIds } = req.body;
     if (!name || !code || !year || !semester) return res.status(400).json({ error: 'name, code, year, semester required' });
     const id = uuidv4();
-    await db.execute({ sql: 'INSERT INTO subjects (id,name,code,year,semester,credits,staffId) VALUES (?,?,?,?,?,?,?)', args: [id, name, code, year, semester, credits || 3, staffId || null] });
+    await db.execute({ sql: 'INSERT INTO subjects (id,name,code,year,semester,credits,hoursPerWeek) VALUES (?,?,?,?,?,?,?)', args: [id, name, code, year, semester, credits || 3, hoursPerWeek || 4] });
+    // Assign staff via junction table
+    if (staffIds && staffIds.length) {
+      const batch = staffIds.map(sid => ({ sql: 'INSERT OR IGNORE INTO subject_staff (id,subjectId,staffId) VALUES (?,?,?)', args: [uuidv4(), id, sid] }));
+      await db.batch(batch, 'write');
+    }
     res.json({ success: true, id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 router.put('/subjects/:id', requireAuth, requireHOD, async (req, res) => {
   try {
-    const { name, code, year, semester, credits, staffId } = req.body;
-    await db.execute({ sql: 'UPDATE subjects SET name=?,code=?,year=?,semester=?,credits=?,staffId=? WHERE id=?', args: [name, code, year, semester, credits, staffId || null, req.params.id] });
+    const { name, code, year, semester, credits, hoursPerWeek, staffIds } = req.body;
+    await db.execute({ sql: 'UPDATE subjects SET name=?,code=?,year=?,semester=?,credits=?,hoursPerWeek=? WHERE id=?', args: [name, code, year, semester, credits, hoursPerWeek || 4, req.params.id] });
+    // Re-sync staff assignments
+    if (staffIds !== undefined) {
+      await db.execute({ sql: 'DELETE FROM subject_staff WHERE subjectId=?', args: [req.params.id] });
+      if (staffIds.length) {
+        const batch = staffIds.map(sid => ({ sql: 'INSERT OR IGNORE INTO subject_staff (id,subjectId,staffId) VALUES (?,?,?)', args: [uuidv4(), req.params.id, sid] }));
+        await db.batch(batch, 'write');
+      }
+    }
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -58,13 +77,14 @@ router.get('/exams/:year', requireAuth, async (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const result = await db.execute({ sql: `
-      SELECT e.*, s.name as subjectName, s.code as subjectCode, u.name as staffName,
-             p.name as publishedByName
+      SELECT e.*, s.name as subjectName, s.code as subjectCode,
+             GROUP_CONCAT(u.name, ', ') as staffName
       FROM exams e
       JOIN subjects s ON e.subjectId = s.id
-      LEFT JOIN users u ON s.staffId = u.id
-      LEFT JOIN users p ON e.publishedBy = p.id
+      LEFT JOIN subject_staff ss ON ss.subjectId = s.id
+      LEFT JOIN users u ON ss.staffId = u.id
       WHERE e.year = ?
+      GROUP BY e.id
       ORDER BY e.type, s.code
     `, args: [year] });
     res.json({ exams: result.rows });
@@ -91,19 +111,20 @@ router.put('/exams/:id', requireAuth, requireHOD, async (req, res) => {
 
 router.post('/exams/:id/publish', requireAuth, requireHOD, async (req, res) => {
   try {
-    const examRes = await db.execute({ sql: 'SELECT e.*, s.year FROM exams e JOIN subjects s ON e.subjectId = s.id WHERE e.id = ?', args: [req.params.id] });
+    const examRes = await db.execute({ sql: 'SELECT * FROM exams WHERE id=?', args: [req.params.id] });
     const exam = examRes.rows[0];
     if (!exam) return res.status(404).json({ error: 'Exam not found' });
 
-    await db.execute({ sql: 'UPDATE exams SET isPublished=1, publishedBy=?, publishedAt=? WHERE id=?', args: [req.user.userId, new Date().toISOString(), req.params.id] });
+    await db.execute({ sql: 'UPDATE exams SET isPublished=1 WHERE id=?', args: [req.params.id] });
 
     const notifId = uuidv4();
-    await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetRole,targetYear,sentByUserId,createdAt) VALUES (?,?,?,?,?,?,?)', args: [notifId, `${exam.type} Exam Scheduled`, `${exam.title} - ${exam.examDate || 'Date TBA'} ${exam.examTime ? '(' + exam.examTime + ')' : ''}. Max Marks: ${exam.maxMarks}`, 'STUDENT', exam.year, req.user.userId, new Date().toISOString()] });
+    await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetRole,targetYear,sentByUserId,createdAt) VALUES (?,?,?,?,?,?,?)', args: [notifId, `${exam.type} Exam Scheduled`, `${exam.title} - ${exam.examDate || 'Date TBA'}. Max Marks: ${exam.maxMarks}`, 'STUDENT', exam.year, req.user.userId, new Date().toISOString()] });
 
-    const subjectRes = await db.execute({ sql: 'SELECT staffId FROM subjects WHERE id=?', args: [exam.subjectId] });
-    const subject = subjectRes.rows[0];
-    if (subject && subject.staffId) {
-      await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetUserId,sentByUserId,createdAt) VALUES (?,?,?,?,?,?)', args: [uuidv4(), `Please Enter Marks: ${exam.title}`, `${exam.type} exam published for Year ${exam.year}. Open the Mark Entry section to fill student marks.`, subject.staffId, req.user.userId, new Date().toISOString()] });
+    // Notify assigned staff
+    const staffRes = await db.execute({ sql: 'SELECT staffId FROM subject_staff WHERE subjectId=?', args: [exam.subjectId] });
+    for (const row of staffRes.rows) {
+      const notifStaffId = uuidv4();
+      await db.execute({ sql: 'INSERT INTO notifications (id,title,body,targetRole,targetYear,sentByUserId,createdAt) VALUES (?,?,?,?,?,?,?)', args: [notifStaffId, `Please Enter Marks: ${exam.title}`, `${exam.type} exam published for Year ${exam.year}. Fill student marks in the Mark Entry section.`, 'STAFF', null, req.user.userId, new Date().toISOString()] });
     }
 
     const io = req.app.get('io');
@@ -139,8 +160,8 @@ router.post('/marks', requireAuth, requireStaffOrHOD, async (req, res) => {
     if (!examId || !Array.isArray(marksData)) return res.status(400).json({ error: 'examId and marksData[] required' });
 
     const batch = marksData.map(({ studentId, marks }) => ({
-      sql: 'INSERT INTO marks (id,examId,studentId,marks,enteredBy,enteredAt) VALUES (?,?,?,?,?,?) ON CONFLICT(examId,studentId) DO UPDATE SET marks=excluded.marks,enteredBy=excluded.enteredBy,enteredAt=excluded.enteredAt',
-      args: [uuidv4(), examId, studentId, marks !== '' ? parseFloat(marks) : null, req.user.userId, new Date().toISOString()]
+      sql: 'INSERT INTO marks (id,examId,studentId,marks,enteredAt) VALUES (?,?,?,?,?) ON CONFLICT(examId,studentId) DO UPDATE SET marks=excluded.marks,enteredAt=excluded.enteredAt',
+      args: [uuidv4(), examId, studentId, marks !== '' ? parseFloat(marks) : null, new Date().toISOString()]
     }));
     await db.batch(batch, "write");
 
@@ -222,22 +243,28 @@ router.get('/pending-exams', requireAuth, requireStaffOrHOD, async (req, res) =>
     let result;
     if (req.user.role === 'HOD') {
       result = await db.execute(`
-        SELECT e.*, s.name as subjectName, s.code as subjectCode, s.year, s.staffId,
-               u.name as staffName,
+        SELECT e.*, s.name as subjectName, s.code as subjectCode, s.year,
+               GROUP_CONCAT(u.name, ', ') as staffName,
                (SELECT COUNT(*) FROM users WHERE role='STUDENT' AND year=s.year AND isActive=1) as totalStudents,
                (SELECT COUNT(*) FROM marks WHERE examId=e.id AND marks IS NOT NULL) as filledCount
-        FROM exams e JOIN subjects s ON e.subjectId=s.id LEFT JOIN users u ON s.staffId=u.id
+        FROM exams e
+        JOIN subjects s ON e.subjectId=s.id
+        LEFT JOIN subject_staff ss ON ss.subjectId = s.id
+        LEFT JOIN users u ON ss.staffId=u.id
         WHERE e.isPublished=1
-        ORDER BY e.publishedAt DESC
+        GROUP BY e.id
+        ORDER BY e.createdAt DESC
       `);
     } else {
       result = await db.execute({ sql: `
-        SELECT e.*, s.name as subjectName, s.code as subjectCode, s.year, s.staffId,
+        SELECT e.*, s.name as subjectName, s.code as subjectCode, s.year,
                (SELECT COUNT(*) FROM users WHERE role='STUDENT' AND year=s.year AND isActive=1) as totalStudents,
                (SELECT COUNT(*) FROM marks WHERE examId=e.id AND marks IS NOT NULL) as filledCount
-        FROM exams e JOIN subjects s ON e.subjectId=s.id
-        WHERE e.isPublished=1 AND s.staffId=?
-        ORDER BY e.publishedAt DESC
+        FROM exams e
+        JOIN subjects s ON e.subjectId=s.id
+        JOIN subject_staff ss ON ss.subjectId=s.id AND ss.staffId=?
+        WHERE e.isPublished=1
+        ORDER BY e.createdAt DESC
       `, args: [req.user.userId] });
     }
     res.json({ exams: result.rows });

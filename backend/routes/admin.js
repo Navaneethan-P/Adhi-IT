@@ -25,6 +25,37 @@ router.get('/users', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+router.post('/users/bulk', async (req, res) => {
+  try {
+    const { users } = req.body;
+    if (!users || !Array.isArray(users)) return res.status(400).json({ error: 'Array of users required' });
+
+    let added = 0;
+    let skipped = 0;
+
+    for (const u of users) {
+      if (!u.name || !u.rollNo || !u.role) {
+        skipped++;
+        continue;
+      }
+      try {
+        const defaultPassword = u.rollNo.toString().slice(-4);
+        const id = uuidv4();
+        await db.execute({
+          sql: `INSERT INTO users (id, name, rollNo, password, role, year, department, inchargeYear) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: [id, u.name, u.rollNo, hashPassword(defaultPassword), u.role, u.year || null, u.department || 'IT', u.inchargeYear || null]
+        });
+        added++;
+      } catch (e) {
+        skipped++;
+      }
+    }
+    res.json({ success: true, added, skipped });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.post('/users', async (req, res) => {
   try {
     const { name, rollNo, role, year, department, inchargeYear } = req.body;

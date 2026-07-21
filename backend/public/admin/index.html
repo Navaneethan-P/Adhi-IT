@@ -865,7 +865,11 @@
       document.getElementById('content').innerHTML = `
         <div class="section-hd">
           <h2>Students <span style="color:var(--text3);font-size:14px;font-weight:500">(${users.length} total)</span></h2>
-          <button class="btn btn-primary" onclick="addUserModal('STUDENT')">+ Add Student</button>
+          <div class="section-hd-right">
+            <button class="btn btn-ghost" onclick="document.getElementById('csv-upload-student').click()">Upload CSV</button>
+            <input type="file" id="csv-upload-student" accept=".csv" style="display:none" onchange="handleCSVUpload(event, 'STUDENT')">
+            <button class="btn btn-primary" onclick="addUserModal('STUDENT')">+ Add Student</button>
+          </div>
         </div>
         <div class="search-wrap">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1030,6 +1034,56 @@
         closeModal();
         showSection(role === 'STUDENT' ? 'students' : 'staff');
       } catch (e) { toast(e.message, 'err'); }
+    };
+
+    window.handleCSVUpload = (e, role) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const text = ev.target.result;
+        const lines = text.split('\n').filter(l => l.trim().length > 0);
+        if (lines.length < 2) return toast('CSV is empty or invalid', 'err');
+        
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        
+        const nameIdx = headers.findIndex(h => h.includes('name'));
+        const rollIdx = headers.findIndex(h => h.includes('reg no') || h.includes('roll'));
+        const yearIdx = headers.findIndex(h => h === 'year');
+        const deptIdx = headers.findIndex(h => h.includes('branch') || h.includes('dept'));
+        
+        if (nameIdx === -1 || rollIdx === -1) {
+          return toast('CSV must contain Name and Reg No / Roll columns', 'err');
+        }
+        
+        const users = [];
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(',');
+          if (row.length <= Math.max(nameIdx, rollIdx)) continue;
+          
+          users.push({
+            name: row[nameIdx].trim(),
+            rollNo: row[rollIdx].trim(),
+            role: role,
+            year: yearIdx !== -1 && row[yearIdx] ? parseInt(row[yearIdx].trim()) : null,
+            department: deptIdx !== -1 && row[deptIdx] ? row[deptIdx].trim() : 'IT'
+          });
+        }
+        
+        if (!users.length) return toast('No valid users found in CSV', 'err');
+        
+        try {
+          toast(`Uploading ${users.length} users...`);
+          const res = await api('POST', '/api/admin/users/bulk', { users });
+          toast(`Added ${res.added} users. Skipped ${res.skipped}.`);
+          showSection(role === 'STUDENT' ? 'students' : 'staff');
+        } catch (err) {
+          toast(err.message, 'err');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
     };
 
     window.editUser = async (id) => {
